@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * 报修管理Servlet
  */
-@WebServlet("/repair")
+@WebServlet("/admin/repair")
 public class RepairServlet extends BaseServlet {
     private RepairService repairService = new RepairService();
 

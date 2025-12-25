@@ -3,15 +3,11 @@ package com.property.dao;
 import com.property.entity.House;
 import com.property.util.DBUtil;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.util.List;
 
 /**
  * 房屋DAO
@@ -59,7 +55,7 @@ public class HouseDao extends BaseDao {
             sql.append("  AND (h.house_id LIKE ? OR h.building_no LIKE ? OR o.owner_name LIKE ?) ");
         }
         if (hasStatus) {
-            sql.append("  AND h.house_status = ? ");
+            sql.append("  AND h.house_status = ? ");  // ✅ 使用 house_status
         }
 
         sql.append(") AS temp ");
@@ -68,7 +64,6 @@ public class HouseDao extends BaseDao {
         int start = (pageNum - 1) * pageSize + 1;
         int end = pageNum * pageSize;
 
-        // 动态构建参数
         List<Object> params = new java.util.ArrayList<>();
         if (hasKeyword) {
             String likeKeyword = "%" + keyword + "%";
@@ -105,11 +100,13 @@ public class HouseDao extends BaseDao {
             params.add(likeKeyword);
         }
         if (hasStatus) {
-            sql.append("AND h.house_status = ? ");
+            sql.append("AND h.house_status = ? ");  // ✅ 使用 house_status
             params.add(status);
         }
 
-        return queryForLong(sql.toString(), params.toArray());
+        long result = queryForLong(sql.toString(), params.toArray());
+        logger.info("统计房屋数量 - SQL: {}, 参数: {}, 结果: {}", sql, params, result);
+        return result;
     }
 
     /**
@@ -128,7 +125,7 @@ public class HouseDao extends BaseDao {
      * 查询空置房屋
      */
     public List<House> findVacantHouses() {
-        String sql = "SELECT * FROM houses WHERE house_status = 'vacant' " +
+        String sql = "SELECT * FROM houses WHERE house_status = 'vacant' " +  // ✅ 使用 house_status
                 "ORDER BY building_no, unit_no, floor";
         return query(sql, this::mapHouse);
     }
@@ -138,7 +135,7 @@ public class HouseDao extends BaseDao {
      */
     public int insert(House house) {
         String sql = "INSERT INTO houses (house_id, building_no, unit_no, floor, layout, " +
-                "area, price_per_sqm, house_status, sale_status, owner_id) " +
+                "area, price_per_sqm, house_status, sale_status, owner_id) " +  // ✅ 使用 house_status
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         return update(sql,
                 house.getHouseId(),
@@ -159,7 +156,7 @@ public class HouseDao extends BaseDao {
      */
     public int update(House house) {
         String sql = "UPDATE houses SET building_no = ?, unit_no = ?, floor = ?, layout = ?, " +
-                "area = ?, price_per_sqm = ?, house_status = ?, sale_status = ?, " +
+                "area = ?, price_per_sqm = ?, house_status = ?, sale_status = ?, " +  // ✅ 使用 house_status
                 "owner_id = ?, update_time = GETDATE() " +
                 "WHERE house_id = ?";
         return update(sql,
@@ -180,7 +177,7 @@ public class HouseDao extends BaseDao {
      * 分配业主
      */
     public int assignOwner(String houseId, String ownerId) {
-        String sql = "UPDATE houses SET owner_id = ?, house_status = 'occupied', " +
+        String sql = "UPDATE houses SET owner_id = ?, house_status = 'occupied', " +  // ✅ 使用 house_status
                 "update_time = GETDATE() WHERE house_id = ?";
         return update(sql, ownerId, houseId);
     }
@@ -205,7 +202,7 @@ public class HouseDao extends BaseDao {
      * 统计各状态房屋数量
      */
     public java.util.Map<String, Long> countByStatus() {
-        String sql = "SELECT house_status, COUNT(*) AS cnt FROM houses GROUP BY house_status";
+        String sql = "SELECT house_status, COUNT(*) AS cnt FROM houses GROUP BY house_status";  // ✅ 使用 house_status
         java.util.Map<String, Long> map = new java.util.HashMap<>();
 
         Connection conn = null;
@@ -217,9 +214,16 @@ public class HouseDao extends BaseDao {
             pstmt = conn.prepareStatement(sql);
             rs = pstmt.executeQuery();
 
+            logger.info("执行 SQL: {}", sql);
+
             while (rs.next()) {
-                map.put(rs.getString("house_status"), rs.getLong("cnt"));
+                String status = rs.getString("house_status");  // ✅ 使用 house_status
+                long count = rs.getLong("cnt");
+                map.put(status, count);
+                logger.info("房屋状态: {}, 数量: {}", status, count);
             }
+
+            logger.info("统计各状态房屋数量结果: {}", map);
         } catch (SQLException e) {
             logger.error("统计失败", e);
         } finally {
@@ -241,8 +245,17 @@ public class HouseDao extends BaseDao {
         house.setLayout(rs.getString("layout"));
         house.setArea(rs.getBigDecimal("area"));
         house.setPricePerSqm(rs.getBigDecimal("price_per_sqm"));
+
+        // ✅ 使用 house_status
         house.setHouseStatus(rs.getString("house_status"));
-        house.setSaleStatus(rs.getString("sale_status"));
+
+        // ✅ 添加 sale_status
+        try {
+            house.setSaleStatus(rs.getString("sale_status"));
+        } catch (SQLException e) {
+            // 如果查询中没有 sale_status 字段，忽略
+        }
+
         house.setOwnerId(rs.getString("owner_id"));
         house.setCreateTime(rs.getTimestamp("create_time"));
         house.setUpdateTime(rs.getTimestamp("update_time"));

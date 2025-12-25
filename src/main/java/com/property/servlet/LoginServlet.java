@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 /**
  * 登录Servlet
@@ -140,6 +141,31 @@ public class LoginServlet extends BaseServlet {
                 return "finance/index.jsp";
             default:
                 return "index.jsp";
+        }
+    }
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json;charset=UTF-8");
+
+        // 同时支持 method 和 action 参数
+        String methodName = req.getParameter("method");
+        if (methodName == null || methodName.trim().isEmpty()) {
+            methodName = req.getParameter("action");
+        }
+        if (methodName == null || methodName.trim().isEmpty()) {
+            methodName = "login";
+        }
+
+        try {
+            Method method = this.getClass().getMethod(methodName,
+                    HttpServletRequest.class, HttpServletResponse.class);
+            method.invoke(this, req, resp);
+        } catch (Exception e) {
+            logger.error("处理请求失败：method=" + methodName, e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "服务器内部错误");
         }
     }
 }

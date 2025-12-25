@@ -1,202 +1,284 @@
-package com.property.util;
+package com.property.dao;
 
-import org.apache.commons.dbcp2.BasicDataSource;
+import com.property.util.DBUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 数据库工具类 - SQL Server Windows 身份验证版本
+ * DAO 基类
+ * 封装常用的数据库操作方法
  */
-public class DBUtil {
-
-    private static BasicDataSource dataSource;
-
-    // SQL Server 数据库配置（Windows 身份验证）
-    private static final String DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-
-    // Windows 身份验证连接字符串
-    private static final String URL = "jdbc:sqlserver://localhost:1433;" +
-            "databaseName=PropertyManagement;" +
-            "integratedSecurity=true;" +
-            "encrypt=false;" +
-            "trustServerCertificate=true";
-
-    // Windows 身份验证不需要用户名和密码
-    // private static final String USERNAME = "";
-    // private static final String PASSWORD = "";
-
-    // 连接池配置
-    private static final int INITIAL_SIZE = 5;
-    private static final int MAX_TOTAL = 20;
-    private static final int MAX_IDLE = 10;
-    private static final int MIN_IDLE = 5;
-    private static final long MAX_WAIT_MILLIS = 10000;
-
-    // 静态代码块，初始化连接池
-    static {
-        try {
-            Class.forName(DRIVER);
-            System.out.println("✅ SQL Server 驱动加载成功");
-
-            dataSource = new BasicDataSource();
-            dataSource.setDriverClassName(DRIVER);
-            dataSource.setUrl(URL);
-
-            // Windows 身份验证不需要设置用户名和密码
-            // dataSource.setUsername(USERNAME);
-            // dataSource.setPassword(PASSWORD);
-
-            dataSource.setInitialSize(INITIAL_SIZE);
-            dataSource.setMaxTotal(MAX_TOTAL);
-            dataSource.setMaxIdle(MAX_IDLE);
-            dataSource.setMinIdle(MIN_IDLE);
-            dataSource.setMaxWaitMillis(MAX_WAIT_MILLIS);
-
-            dataSource.setTestOnBorrow(true);
-            dataSource.setValidationQuery("SELECT 1");
-
-            System.out.println("✅ 数据库连接池初始化成功（Windows 身份验证）");
-            System.out.println("📍 数据库地址：" + URL);
-
-        } catch (ClassNotFoundException e) {
-            System.err.println("❌ SQL Server 驱动加载失败");
-            e.printStackTrace();
-        }
-    }
+public abstract class BaseDao {
+    protected static final Logger logger = LoggerFactory.getLogger(BaseDao.class);
 
     /**
-     * 获取数据库连接
+     * 查询单个对象
      */
-    public static Connection getConnection() throws SQLException {
+    protected <E> E queryOne(String sql, RowMapper<E> rowMapper, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
         try {
-            Connection conn = dataSource.getConnection();
-            System.out.println("✅ 获取数据库连接成功（Windows 身份验证）");
-            return conn;
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            setParameters(pstmt, params);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
         } catch (SQLException e) {
-            System.err.println("❌ 获取数据库连接失败：" + e.getMessage());
-            e.printStackTrace();
-            throw e;
+            logger.error("查询单个对象失败: " + sql, e);
+            throw new RuntimeException("查询失败", e);
+        } finally {
+            DBUtil.close(rs, pstmt, conn);  // ✅ 修改：正确的参数顺序
         }
     }
 
     /**
-     * 开启事务
+     * 查询列表
      */
-    public static void beginTransaction(Connection conn) throws SQLException {
-        if (conn != null) {
-            conn.setAutoCommit(false);
-            System.out.println("✅ 事务已开启");
-        }
-    }
+    protected <E> List<E> query(String sql, RowMapper<E> rowMapper, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<E> list = new ArrayList<>();
 
-    /**
-     * 提交事务
-     */
-    public static void commit(Connection conn) throws SQLException {
-        if (conn != null) {
-            conn.commit();
-            System.out.println("✅ 事务已提交");
-        }
-    }
-
-    /**
-     * 回滚事务
-     */
-    public static void rollback(Connection conn) {
-        if (conn != null) {
-            try {
-                conn.rollback();
-                System.out.println("⚠️ 事务已回滚");
-            } catch (SQLException e) {
-                System.err.println("❌ 事务回滚失败");
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * 关闭资源
-     */
-    public static void close(Connection conn, PreparedStatement ps, ResultSet rs) {
         try {
-            if (rs != null) {
-                rs.close();
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            setParameters(pstmt, params);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                E entity = rowMapper.mapRow(rs);
+                list.add(entity);
             }
-            if (ps != null) {
-                ps.close();
+            return list;
+        } catch (SQLException e) {
+            logger.error("查询列表失败: " + sql, e);
+            throw new RuntimeException("查询失败", e);
+        } finally {
+            DBUtil.close(rs, pstmt, conn);  // ✅ 修改：正确的参数顺序
+        }
+    }
+
+    /**
+     * 更新操作 (INSERT, UPDATE, DELETE)
+     */
+    protected int update(String sql, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            setParameters(pstmt, params);
+            int rows = pstmt.executeUpdate();
+            return rows;
+        } catch (SQLException e) {
+            logger.error("更新失败: " + sql, e);
+            throw new RuntimeException("更新失败", e);
+        } finally {
+            DBUtil.close(pstmt, conn);  // ✅ 修改：正确的参数顺序
+        }
+    }
+
+    /**
+     * 插入并返回自增主键
+     */
+    protected Integer insertAndGetKey(String sql, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            setParameters(pstmt, params);
+            pstmt.executeUpdate();
+
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
             }
-            if (conn != null) {
-                // 如果连接还在事务中，先回滚
-                if (!conn.getAutoCommit()) {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
+            return null;
+        } catch (SQLException e) {
+            logger.error("插入并获取主键失败: " + sql, e);
+            throw new RuntimeException("插入失败", e);
+        } finally {
+            DBUtil.close(rs, pstmt, conn);  // ✅ 修改：正确的参数顺序
+        }
+    }
+
+    /**
+     * 查询单个值 (COUNT, SUM, MAX 等)
+     */
+    protected Long queryForLong(String sql, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            setParameters(pstmt, params);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                long value = rs.getLong(1);
+                return value;
+            }
+            return 0L;
+        } catch (SQLException e) {
+            logger.error("查询单个值失败: " + sql, e);
+            throw new RuntimeException("查询失败", e);
+        } finally {
+            DBUtil.close(rs, pstmt, conn);  // ✅ 修改：正确的参数顺序
+        }
+    }
+
+    /**
+     * 调用存储过程
+     */
+    protected void callProcedure(String sql, ProcedureCallback callback) {
+        Connection conn = null;
+        CallableStatement cstmt = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            cstmt = conn.prepareCall(sql);
+            callback.doInCallableStatement(cstmt);
+        } catch (SQLException e) {
+            logger.error("调用存储过程失败: " + sql, e);
+            throw new RuntimeException("调用存储过程失败", e);
+        } finally {
+            DBUtil.close(cstmt, conn);  // ✅ 修改：使用 DBUtil.close()
+        }
+    }
+
+    /**
+     * 设置 PreparedStatement 参数
+     */
+    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
+        if (params != null && params.length > 0) {
+            for (int i = 0; i < params.length; i++) {
+                Object param = params[i];
+                if (param == null) {
+                    pstmt.setNull(i + 1, Types.NULL);
+                } else if (param instanceof java.util.Date) {
+                    // 处理日期类型
+                    java.util.Date date = (java.util.Date) param;
+                    if (param instanceof java.sql.Date) {
+                        pstmt.setDate(i + 1, (java.sql.Date) param);
+                    } else if (param instanceof java.sql.Timestamp) {
+                        pstmt.setTimestamp(i + 1, (java.sql.Timestamp) param);
+                    } else {
+                        pstmt.setTimestamp(i + 1, new java.sql.Timestamp(date.getTime()));
+                    }
+                } else {
+                    pstmt.setObject(i + 1, param);
                 }
-                conn.close();
-                System.out.println("✅ 数据库连接已关闭");
             }
-        } catch (SQLException e) {
-            System.err.println("❌ 关闭资源失败");
-            e.printStackTrace();
         }
     }
 
     /**
-     * 关闭资源（无ResultSet）
+     * 行映射器接口
      */
-    public static void close(Connection conn, PreparedStatement ps) {
-        close(conn, ps, null);
+    @FunctionalInterface
+    protected interface RowMapper<E> {
+        E mapRow(ResultSet rs) throws SQLException;
     }
 
     /**
-     * 关闭连接（单独）
+     * 存储过程回调接口
      */
-    public static void close(Connection conn) {
-        close(conn, null, null);
+    @FunctionalInterface
+    protected interface ProcedureCallback {
+        void doInCallableStatement(CallableStatement cstmt) throws SQLException;
     }
 
     /**
-     * 关闭连接池
+     * 批量更新操作
      */
-    public static void closeDataSource() {
+    protected int[] batchUpdate(String sql, List<Object[]> paramsList) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
         try {
-            if (dataSource != null) {
-                dataSource.close();
-                System.out.println("✅ 数据库连接池已关闭");
+            conn = DBUtil.getConnection();
+            conn.setAutoCommit(false); // 开启事务
+
+            pstmt = conn.prepareStatement(sql);
+
+            for (Object[] params : paramsList) {
+                setParameters(pstmt, params);
+                pstmt.addBatch();
             }
+
+            int[] results = pstmt.executeBatch();
+            conn.commit(); // 提交事务
+
+            logger.info("批量更新成功，共 {} 条记录", paramsList.size());
+            return results;
+
         } catch (SQLException e) {
-            System.err.println("❌ 关闭连接池失败");
-            e.printStackTrace();
+            logger.error("批量更新失败: " + sql, e);
+            try {
+                if (conn != null) {
+                    conn.rollback(); // 回滚事务
+                }
+            } catch (SQLException ex) {
+                logger.error("事务回滚失败", ex);
+            }
+            throw new RuntimeException("批量更新失败", e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true); // 恢复自动提交
+                }
+            } catch (SQLException e) {
+                logger.error("恢复自动提交失败", e);
+            }
+            DBUtil.close(pstmt, conn);  // ✅ 修改：正确的参数顺序
         }
     }
 
     /**
-     * 测试数据库连接
+     * 执行事务
      */
-    public static void main(String[] args) {
+    protected void executeTransaction(TransactionCallback callback) {
         Connection conn = null;
         try {
-            System.out.println("========== 测试 SQL Server 连接（Windows 身份验证）==========");
-            conn = getConnection();
-            System.out.println("✅ 数据库连接测试成功！");
-            System.out.println("数据库产品：" + conn.getMetaData().getDatabaseProductName());
-            System.out.println("数据库版本：" + conn.getMetaData().getDatabaseProductVersion());
-            System.out.println("当前用户：" + conn.getMetaData().getUserName());
+            conn = DBUtil.getConnection();
+            DBUtil.beginTransaction(conn);
 
-            // 测试事务
-            System.out.println("\n========== 测试事务管理 ==========");
-            beginTransaction(conn);
-            System.out.println("执行一些数据库操作...");
-            commit(conn);
+            callback.doInTransaction(conn);
 
-        } catch (SQLException e) {
-            System.err.println("❌ 数据库连接测试失败！");
-            e.printStackTrace();
-            rollback(conn);
+            DBUtil.commit(conn);
+            logger.info("事务提交成功");
+
+        } catch (Exception e) {
+            logger.error("事务执行失败", e);
+            DBUtil.rollback(conn);
+            throw new RuntimeException("事务执行失败", e);
         } finally {
-            close(conn);
+            DBUtil.close(conn);  // ✅ 修改：只关闭 Connection
         }
+    }
+
+    /**
+     * 事务回调接口
+     */
+    @FunctionalInterface
+    protected interface TransactionCallback {
+        void doInTransaction(Connection conn) throws Exception;
     }
 }

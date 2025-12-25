@@ -12,30 +12,193 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 统计Servlet
  */
-@WebServlet("/statistics")
+@WebServlet("/admin/statistics")
 public class StatisticsServlet extends BaseServlet {
     private StatisticsService statisticsService = new StatisticsService();
 
     /**
-     * 获取仪表盘统计数据
+     * 获取仪表盘数据（首页调用）
      */
-    public void dashboard(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void dashboard(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
         if (!checkLogin(req, resp)) {
             return;
         }
 
         try {
             Map<String, Object> stats = statisticsService.getDashboardStatistics();
+
+            logger.info("仪表盘数据查询成功: " + stats);
             writeSuccess(resp, "查询成功", stats);
         } catch (Exception e) {
-            logger.error("获取仪表盘统计数据失败", e);
+            logger.error("获取仪表盘数据失败", e);
+            writeError(resp, "查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取概览数据（与 dashboard 相同）
+     */
+    public void overview(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        dashboard(req, resp);
+    }
+
+    /**
+     * 获取收费趋势数据（首页图表调用）
+     */
+    public void trend(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
+            return;
+        }
+
+        try {
+            // 获取最近6个月的数据
+            List<Map<String, Object>> trendData = statisticsService.getPaymentTrend();
+
+            // 转换为前端需要的格式
+            List<String> months = new ArrayList<>();
+            List<Double> receivables = new ArrayList<>();
+            List<Double> received = new ArrayList<>();
+
+            for (Map<String, Object> data : trendData) {
+                months.add((String) data.get("month"));
+
+                // 处理 BigDecimal 类型
+                Object totalAmountObj = data.get("totalAmount");
+                Object paidAmountObj = data.get("paidAmount");
+
+                double totalAmount = 0.0;
+                double paidAmount = 0.0;
+
+                if (totalAmountObj instanceof BigDecimal) {
+                    totalAmount = ((BigDecimal) totalAmountObj).doubleValue();
+                } else if (totalAmountObj instanceof Number) {
+                    totalAmount = ((Number) totalAmountObj).doubleValue();
+                }
+
+                if (paidAmountObj instanceof BigDecimal) {
+                    paidAmount = ((BigDecimal) paidAmountObj).doubleValue();
+                } else if (paidAmountObj instanceof Number) {
+                    paidAmount = ((Number) paidAmountObj).doubleValue();
+                }
+
+                receivables.add(totalAmount);
+                received.add(paidAmount);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("months", months);
+            result.put("receivable", receivables);  // 应收
+            result.put("received", received);        // 实收
+
+            logger.info("趋势数据查询成功: " + result);
+            writeSuccess(resp, "查询成功", result);
+        } catch (Exception e) {
+            logger.error("获取趋势数据失败", e);
+            writeError(resp, "查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取待处理报修列表（首页调用）
+     */
+    public void findPending(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
+            return;
+        }
+
+        try {
+            // 调用 RepairService 获取待处理报修
+            List<Map<String, Object>> pendingRepairs = statisticsService.getPendingRepairs();
+
+            logger.info("待处理报修查询成功，数量: " + pendingRepairs.size());
+            writeSuccess(resp, "查询成功", pendingRepairs);
+        } catch (Exception e) {
+            logger.error("获取待处理报修失败", e);
+            writeError(resp, "查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取月度统计数据
+     */
+    public void monthly(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        trend(req, resp);  // 复用 trend 方法
+    }
+
+    /**
+     * 获取缴费状态分布
+     */
+    public void status(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
+            return;
+        }
+
+        try {
+            Map<String, Object> stats = statisticsService.getDashboardStatistics();
+
+            // 提取状态分布数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("paid", stats.getOrDefault("paidCount", 0));
+            result.put("unpaid", stats.getOrDefault("unpaidCount", 0));
+            result.put("overdue", stats.getOrDefault("overdueCount", 0));
+
+            writeSuccess(resp, "查询成功", result);
+        } catch (Exception e) {
+            logger.error("获取状态分布失败", e);
+            writeError(resp, "查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取楼栋统计数据
+     */
+    public void building(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
+            return;
+        }
+
+        try {
+            List<Map<String, Object>> buildingStats = statisticsService.getBuildingPaymentStatus();
+
+            // 转换为前端需要的格式
+            List<String> buildings = new ArrayList<>();
+            List<Double> rates = new ArrayList<>();
+
+            for (Map<String, Object> data : buildingStats) {
+                buildings.add(data.get("buildingNo") + "栋");
+
+                // 获取缴费率，处理不同类型
+                Object rateObj = data.get("paymentRate");
+                double rate = 0.0;
+
+                if (rateObj instanceof BigDecimal) {
+                    rate = ((BigDecimal) rateObj).doubleValue();
+                } else if (rateObj instanceof Number) {
+                    rate = ((Number) rateObj).doubleValue();
+                }
+
+                rates.add(rate);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("buildings", buildings);
+            result.put("rates", rates);
+
+            writeSuccess(resp, "查询成功", result);
+        } catch (Exception e) {
+            logger.error("获取楼栋统计失败", e);
             writeError(resp, "查询失败：" + e.getMessage());
         }
     }
@@ -43,8 +206,9 @@ public class StatisticsServlet extends BaseServlet {
     /**
      * 获取物业收费统计
      */
-    public void paymentStats(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!checkRole(req, resp, "admin", "finance")) {
+    public void paymentStats(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
             return;
         }
 
@@ -74,49 +238,33 @@ public class StatisticsServlet extends BaseServlet {
     /**
      * 获取各楼栋缴费情况
      */
-    public void buildingStats(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!checkRole(req, resp, "admin", "finance")) {
-            return;
-        }
-
-        try {
-            List<Map<String, Object>> stats = statisticsService.getBuildingPaymentStatus();
-            writeSuccess(resp, "查询成功", stats);
-        } catch (Exception e) {
-            logger.error("获取楼栋缴费统计失败", e);
-            writeError(resp, "查询失败：" + e.getMessage());
-        }
+    public void buildingStats(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        building(req, resp);
     }
 
     /**
      * 获取收费趋势数据
      */
-    public void paymentTrend(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!checkRole(req, resp, "admin", "finance")) {
-            return;
-        }
-
-        try {
-            List<Map<String, Object>> trend = statisticsService.getPaymentTrend();
-            writeSuccess(resp, "查询成功", trend);
-        } catch (Exception e) {
-            logger.error("获取收费趋势失败", e);
-            writeError(resp, "查询失败：" + e.getMessage());
-        }
+    public void paymentTrend(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        trend(req, resp);
     }
 
     /**
      * 导出财务报表（Excel格式）
      */
-    public void exportReport(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!checkRole(req, resp, "finance")) {
+    public void exportReport(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        if (!checkLogin(req, resp)) {
             return;
         }
 
         String startDateStr = getStringParameter(req, "startDate");
         String endDateStr = getStringParameter(req, "endDate");
 
-        if (startDateStr == null || startDateStr.isEmpty() || endDateStr == null || endDateStr.isEmpty()) {
+        if (startDateStr == null || startDateStr.isEmpty() ||
+                endDateStr == null || endDateStr.isEmpty()) {
             writeError(resp, "开始日期和结束日期不能为空");
             return;
         }
@@ -222,29 +370,30 @@ public class StatisticsServlet extends BaseServlet {
         headerRow.getCell(0).setCellStyle(headerStyle);
         headerRow.getCell(1).setCellStyle(headerStyle);
 
-        Row row1 = sheet.createRow(rowNum++);
-        row1.createCell(0).setCellValue("总账单数");
-        row1.createCell(1).setCellValue(((Long) periodStats.get("totalCount")).doubleValue());
-
-        Row row2 = sheet.createRow(rowNum++);
-        row2.createCell(0).setCellValue("已缴费数");
-        row2.createCell(1).setCellValue(((Long) periodStats.get("paidCount")).doubleValue());
-
-        Row row3 = sheet.createRow(rowNum++);
-        row3.createCell(0).setCellValue("应收总额");
-        row3.createCell(1).setCellValue(((BigDecimal) periodStats.get("totalAmount")).doubleValue());
-
-        Row row4 = sheet.createRow(rowNum++);
-        row4.createCell(0).setCellValue("实收总额");
-        row4.createCell(1).setCellValue(((BigDecimal) periodStats.get("paidAmount")).doubleValue());
-
-        Row row5 = sheet.createRow(rowNum++);
-        row5.createCell(0).setCellValue("滞纳金总额");
-        row5.createCell(1).setCellValue(((BigDecimal) periodStats.get("totalLateFee")).doubleValue());
+        // 数据行
+        createDataRow(sheet, rowNum++, "总账单数", periodStats.get("totalCount"));
+        createDataRow(sheet, rowNum++, "已缴费数", periodStats.get("paidCount"));
+        createDataRow(sheet, rowNum++, "应收总额", periodStats.get("totalAmount"));
+        createDataRow(sheet, rowNum++, "实收总额", periodStats.get("paidAmount"));
+        createDataRow(sheet, rowNum++, "滞纳金总额", periodStats.get("totalLateFee"));
 
         // 自动调整列宽
         sheet.autoSizeColumn(0);
         sheet.autoSizeColumn(1);
+    }
+
+    /**
+     * 创建数据行
+     */
+    private void createDataRow(Sheet sheet, int rowNum, String label, Object value) {
+        Row row = sheet.createRow(rowNum);
+        row.createCell(0).setCellValue(label);
+
+        if (value instanceof Number) {
+            row.createCell(1).setCellValue(((Number) value).doubleValue());
+        } else {
+            row.createCell(1).setCellValue(String.valueOf(value));
+        }
     }
 
     /**
@@ -267,21 +416,36 @@ public class StatisticsServlet extends BaseServlet {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> buildingStats = (List<Map<String, Object>>) reportData.get("buildingStats");
 
-        for (Map<String, Object> stat : buildingStats) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue((String) stat.get("buildingNo"));
-            row.createCell(1).setCellValue(((Integer) stat.get("totalRecords")).doubleValue());
-            row.createCell(2).setCellValue(((Integer) stat.get("paidRecords")).doubleValue());
-            row.createCell(3).setCellValue(((BigDecimal) stat.get("totalAmount")).doubleValue());
-            row.createCell(4).setCellValue(((BigDecimal) stat.get("paidAmount")).doubleValue());
-            row.createCell(5).setCellValue(((BigDecimal) stat.get("unpaidAmount")).doubleValue());
-            row.createCell(6).setCellValue(((BigDecimal) stat.get("totalLateFee")).doubleValue());
-            row.createCell(7).setCellValue(((BigDecimal) stat.get("paymentRate")).doubleValue());
+        if (buildingStats != null) {
+            for (Map<String, Object> stat : buildingStats) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(String.valueOf(stat.get("buildingNo")));
+
+                // 处理数字类型
+                setCellNumericValue(row, 1, stat.get("totalRecords"));
+                setCellNumericValue(row, 2, stat.get("paidRecords"));
+                setCellNumericValue(row, 3, stat.get("totalAmount"));
+                setCellNumericValue(row, 4, stat.get("paidAmount"));
+                setCellNumericValue(row, 5, stat.get("unpaidAmount"));
+                setCellNumericValue(row, 6, stat.get("totalLateFee"));
+                setCellNumericValue(row, 7, stat.get("paymentRate"));
+            }
         }
 
         // 自动调整列宽
         for (int i = 0; i < headers.length; i++) {
             sheet.autoSizeColumn(i);
+        }
+    }
+
+    /**
+     * 设置单元格数值
+     */
+    private void setCellNumericValue(Row row, int cellIndex, Object value) {
+        if (value instanceof Number) {
+            row.createCell(cellIndex).setCellValue(((Number) value).doubleValue());
+        } else {
+            row.createCell(cellIndex).setCellValue(0.0);
         }
     }
 }
