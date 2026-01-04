@@ -83,8 +83,9 @@ public class RepairRecord implements Serializable {
 
     /**
      * 满意度评分（1-5分）
+     * ⚠️ 修改：从 Integer 改为 Short，匹配 SQL Server TINYINT 类型
      */
-    private Integer satisfactionRating;
+    private Short satisfactionRating;  // ✅ 改为 Short
 
     /**
      * 反馈意见
@@ -188,5 +189,21 @@ public class RepairRecord implements Serializable {
             return diff / (1000 * 60 * 60);
         }
         return null;
+    }
+
+    /**
+     * 获取满意度评分（转为 Integer 供前端使用）
+     * 兼容方法：前端可能需要 Integer 类型
+     */
+    public Integer getSatisfactionRatingAsInt() {
+        return satisfactionRating != null ? satisfactionRating.intValue() : null;
+    }
+
+    /**
+     * 设置满意度评分（接受 Integer 参数）
+     * 兼容方法：前端可能传递 Integer 类型
+     */
+    public void setSatisfactionRatingFromInt(Integer rating) {
+        this.satisfactionRating = rating != null ? rating.shortValue() : null;
     }
 }

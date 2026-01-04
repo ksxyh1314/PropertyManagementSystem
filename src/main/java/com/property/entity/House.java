@@ -18,7 +18,7 @@ public class House implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 房屋编号（如"1栋2单元301"）
+     * 房屋编号（如"01010101"）
      */
     private String houseId;
 
@@ -38,7 +38,7 @@ public class House implements Serializable {
     private String floor;
 
     /**
-     * 户型（如"两室一厅"）
+     * 户型（如"三室两厅"）
      */
     private String layout;
 
@@ -77,11 +77,28 @@ public class House implements Serializable {
      */
     private Date updateTime;
 
+    // ========================================
     // 关联查询字段（非数据库字段）
+    // ========================================
+
     /**
      * 业主信息（关联查询）
      */
     private Owner owner;
+
+    /**
+     * 业主姓名（用于前端显示）
+     */
+    private String ownerName;
+
+    /**
+     * 业主电话（用于前端显示）
+     */
+    private String ownerPhone;
+
+    // ========================================
+    // 业务方法
+    // ========================================
 
     /**
      * 获取房屋状态显示名称
@@ -122,6 +139,16 @@ public class House implements Serializable {
     }
 
     /**
+     * 获取户型描述（从 layout 字段获取）
+     */
+    public String getLayoutDescription() {
+        if (layout != null && !layout.isEmpty()) {
+            return layout;
+        }
+        return "未知";
+    }
+
+    /**
      * 计算季度物业费（面积 × 单价 × 3个月）
      */
     public BigDecimal calculateQuarterlyFee() {
@@ -156,5 +183,15 @@ public class House implements Serializable {
      */
     public boolean hasOwner() {
         return ownerId != null && !ownerId.trim().isEmpty();
+    }
+
+    /**
+     * 获取完整地址（如"01栋1单元06层"）
+     */
+    public String getFullAddress() {
+        if (buildingNo != null && unitNo != null && floor != null) {
+            return buildingNo + "栋" + unitNo + "单元" + floor + "层";
+        }
+        return "未知";
     }
 }

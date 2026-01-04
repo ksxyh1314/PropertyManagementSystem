@@ -79,7 +79,7 @@ public class ChargeItemService {
             item.setGracePeriod(30);
         }
         if (item.getLateFeeRate() == null) {
-            item.setLateFeeRate(new BigDecimal("0.0005"));
+            item.setLateFeeRate(new BigDecimal("0.0005")); // 默认万分之五
         }
         if (item.getStatus() == null) {
             item.setStatus(1);
@@ -154,12 +154,14 @@ public class ChargeItemService {
     }
 
     /**
-     * 验证收费项目信息
+     * 🔧 验证收费项目信息（完整修复版）
      */
     private void validateChargeItem(ChargeItem item) {
         if (item == null) {
             throw new IllegalArgumentException("收费项目信息不能为空");
         }
+
+        // ========== 基本字段验证 ==========
         if (item.getItemId() == null || item.getItemId().trim().isEmpty()) {
             throw new IllegalArgumentException("项目编号不能为空");
         }
@@ -173,26 +175,73 @@ public class ChargeItemService {
             throw new IllegalArgumentException("计算类型不能为空");
         }
 
-        // 验证项目编号（2位数字）
-        if (!item.getItemId().matches("^\\d{2}$")) {
-            throw new IllegalArgumentException("项目编号必须为2位数字");
+        // ========== 项目编号验证 ==========
+        // 允许2-4位数字或字母数字组合
+        if (!item.getItemId().matches("^[A-Z0-9]{2,4}$")) {
+            throw new IllegalArgumentException("项目编号必须为2-4位大写字母或数字");
         }
 
-        // 验证收费周期
-        if (!item.getChargeCycle().matches("^(monthly|quarterly|yearly)$")) {
-            throw new IllegalArgumentException("收费周期无效，必须为：monthly、quarterly、yearly");
+        // ========== 收费周期验证 ==========
+        if (!item.getChargeCycle().matches("^(monthly|quarterly|yearly|once)$")) {
+            throw new IllegalArgumentException("收费周期无效，必须为：monthly（月）、quarterly（季）、yearly（年）、once（一次性）");
         }
 
-        // 验证计算类型
+        // ========== 计算类型验证 ==========
         if (!item.getCalculationType().matches("^(area_based|fixed)$")) {
-            throw new IllegalArgumentException("计算类型无效，必须为：area_based、fixed");
+            throw new IllegalArgumentException("计算类型无效，必须为：area_based（按面积）、fixed（固定金额）");
         }
 
-        // 如果是固定金额，必须提供固定金额值
+        // ========== 固定金额验证 ==========
         if ("fixed".equals(item.getCalculationType())) {
             if (item.getFixedAmount() == null || item.getFixedAmount().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("固定金额必须大于0");
             }
+            // 验证金额范围（0.01 - 999999.99）
+            if (item.getFixedAmount().compareTo(new BigDecimal("999999.99")) > 0) {
+                throw new IllegalArgumentException("固定金额不能超过999999.99元");
+            }
         }
+
+        // ========== 按面积计算验证 ==========
+        if ("area_based".equals(item.getCalculationType())) {
+            if (item.getFormula() == null || item.getFormula().trim().isEmpty()) {
+                throw new IllegalArgumentException("按面积计算时，计算公式不能为空");
+            }
+        }
+
+        // ========== 🔧 滞纳金比例验证（关键修复） ==========
+        if (item.getLateFeeRate() != null) {
+            // 允许 0 到 1 之间的任意小数（包括 0.0005）
+            if (item.getLateFeeRate().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("滞纳金比例不能为负数");
+            }
+            if (item.getLateFeeRate().compareTo(BigDecimal.ONE) > 0) {
+                throw new IllegalArgumentException("滞纳金比例不能超过1（即100%）");
+            }
+
+            // 可选：验证精度（最多6位小数）
+            if (item.getLateFeeRate().scale() > 6) {
+                throw new IllegalArgumentException("滞纳金比例最多支持6位小数");
+            }
+
+            logger.info("滞纳金比例验证通过：{}", item.getLateFeeRate());
+        }
+
+        // ========== 宽限期验证 ==========
+        if (item.getGracePeriod() != null) {
+            if (item.getGracePeriod() < 0) {
+                throw new IllegalArgumentException("宽限期不能为负数");
+            }
+            if (item.getGracePeriod() > 365) {
+                throw new IllegalArgumentException("宽限期不能超过365天");
+            }
+        }
+
+        // ========== 状态验证 ==========
+        if (item.getStatus() != null && item.getStatus() != 0 && item.getStatus() != 1) {
+            throw new IllegalArgumentException("状态值无效，必须为：0（禁用）或 1（启用）");
+        }
+
+        logger.info("收费项目验证通过：{} - {}", item.getItemId(), item.getItemName());
     }
 }

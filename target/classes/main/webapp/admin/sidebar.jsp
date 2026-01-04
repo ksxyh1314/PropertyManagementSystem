@@ -57,6 +57,13 @@
                 <span>报修管理</span>
             </a>
         </li>
+        <!-- 🔥 新增：投诉管理 -->
+        <li id="menu-complaint">
+            <a href="${pageContext.request.contextPath}/admin/complaint.jsp">
+                <i class="glyphicon glyphicon-comment"></i>
+                <span>投诉管理</span>
+            </a>
+        </li>
         <li id="menu-statistics">
             <a href="${pageContext.request.contextPath}/admin/statistics.jsp">
                 <i class="glyphicon glyphicon-stats"></i>

@@ -1,160 +1,268 @@
 package com.property.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
- * 投诉建议实体类
- * 对应数据库表：complaints
+ * 投诉实体类
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Complaint implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Complaint {
 
-    /**
-     * 投诉ID（自增主键）
-     */
+    /** 投诉ID */
     private Integer complaintId;
 
-    /**
-     * 业主ID
-     */
+    /** 业主ID */
     private String ownerId;
 
-    /**
-     * 投诉类型：service-服务, environment-环境, facility-设施, fee-收费, other-其他
-     */
-    private String complaintType;
-
-    /**
-     * 标题
-     */
-    private String title;
-
-    /**
-     * 内容
-     */
-    private String content;
-
-    /**
-     * 是否匿名：0-否, 1-是
-     */
-    private Integer isAnonymous;
-
-    /**
-     * 投诉状态：pending-待处理, processing-处理中, resolved-已解决, closed-已关闭
-     */
-    private String complaintStatus;
-
-    /**
-     * 提交时间
-     */
-    private Date submitTime;
-
-    /**
-     * 处理人ID
-     */
-    private Integer handlerId;
-
-    /**
-     * 回复内容
-     */
-    private String reply;
-
-    /**
-     * 回复时间
-     */
-    private Date replyTime;
-
-    // 关联查询字段（非数据库字段）
-    /**
-     * 业主姓名
-     */
+    /** 业主姓名 */
     private String ownerName;
 
-    /**
-     * 处理人姓名
-     */
+    /** 业主电话 */
+    private String ownerPhone;
+
+    /** 房屋ID */
+    private String houseId;
+
+    /** 楼栋号 */
+    private String buildingNo;
+
+    /** 单元号 */
+    private String unitNo;
+
+    /** 楼层 */
+    private String floor;
+
+    /** 投诉类型（service=服务, environment=环境, facility=设施, fee=费用, other=其他） */
+    private String complaintType;
+
+    /** 投诉类型名称 */
+    private String complaintTypeName;
+
+    /** 标题 */
+    private String title;
+
+    /** 内容 */
+    private String content;
+
+    /** 是否匿名（0=否，1=是） */
+    private Integer isAnonymous;
+
+    /** 投诉状态（pending=待处理, processing=处理中, resolved=已解决, closed=已关闭） */
+    private String complaintStatus;
+
+    /** 投诉状态名称 */
+    private String complaintStatusName;
+
+    /** 提交时间 */
+    private LocalDateTime submitTime;
+
+    /** 处理人ID */
+    private Integer handlerId;
+
+    /** 处理人姓名 */
     private String handlerName;
 
-    /**
-     * 获取投诉类型显示名称
-     */
-    public String getComplaintTypeDisplay() {
-        if (complaintType == null) {
-            return "未知";
-        }
-        switch (complaintType) {
-            case "service":
-                return "服务投诉";
-            case "environment":
-                return "环境问题";
-            case "facility":
-                return "设施问题";
-            case "fee":
-                return "收费问题";
-            case "other":
-                return "其他";
-            default:
-                return "未知";
-        }
+    /** 处理人电话 */
+    private String handlerPhone;
+
+    /** 回复内容 */
+    private String reply;
+
+    /** 回复时间 */
+    private LocalDateTime replyTime;
+
+    /** 响应时长（小时） */
+    private Integer responseHours;
+
+    // 构造方法
+    public Complaint() {}
+
+    // Getter 和 Setter 方法
+    public Integer getComplaintId() {
+        return complaintId;
     }
 
-    /**
-     * 获取投诉状态显示名称
-     */
-    public String getComplaintStatusDisplay() {
-        if (complaintStatus == null) {
-            return "未知";
-        }
-        switch (complaintStatus) {
-            case "pending":
-                return "待处理";
-            case "processing":
-                return "处理中";
-            case "resolved":
-                return "已解决";
-            case "closed":
-                return "已关闭";
-            default:
-                return "未知";
-        }
+    public void setComplaintId(Integer complaintId) {
+        this.complaintId = complaintId;
     }
 
-    /**
-     * 判断是否匿名
-     */
-    public boolean isAnonymousComplaint() {
-        return Integer.valueOf(1).equals(this.isAnonymous);
+    public String getOwnerId() {
+        return ownerId;
     }
 
-    /**
-     * 判断是否已处理
-     */
-    public boolean isResolved() {
-        return "resolved".equals(this.complaintStatus);
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
-    /**
-     * 判断是否待处理
-     */
-    public boolean isPending() {
-        return "pending".equals(this.complaintStatus);
+    public String getOwnerName() {
+        return ownerName;
     }
 
-    /**
-     * 计算处理时长（小时）
-     */
-    public Long getProcessingHours() {
-        if (submitTime != null && replyTime != null) {
-            long diff = replyTime.getTime() - submitTime.getTime();
-            return diff / (1000 * 60 * 60);
-        }
-        return null;
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getOwnerPhone() {
+        return ownerPhone;
+    }
+
+    public void setOwnerPhone(String ownerPhone) {
+        this.ownerPhone = ownerPhone;
+    }
+
+    public String getHouseId() {
+        return houseId;
+    }
+
+    public void setHouseId(String houseId) {
+        this.houseId = houseId;
+    }
+
+    public String getBuildingNo() {
+        return buildingNo;
+    }
+
+    public void setBuildingNo(String buildingNo) {
+        this.buildingNo = buildingNo;
+    }
+
+    public String getUnitNo() {
+        return unitNo;
+    }
+
+    public void setUnitNo(String unitNo) {
+        this.unitNo = unitNo;
+    }
+
+    public String getFloor() {
+        return floor;
+    }
+
+    public void setFloor(String floor) {
+        this.floor = floor;
+    }
+
+    public String getComplaintType() {
+        return complaintType;
+    }
+
+    public void setComplaintType(String complaintType) {
+        this.complaintType = complaintType;
+    }
+
+    public String getComplaintTypeName() {
+        return complaintTypeName;
+    }
+
+    public void setComplaintTypeName(String complaintTypeName) {
+        this.complaintTypeName = complaintTypeName;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Integer getIsAnonymous() {
+        return isAnonymous;
+    }
+
+    public void setIsAnonymous(Integer isAnonymous) {
+        this.isAnonymous = isAnonymous;
+    }
+
+    public String getComplaintStatus() {
+        return complaintStatus;
+    }
+
+    public void setComplaintStatus(String complaintStatus) {
+        this.complaintStatus = complaintStatus;
+    }
+
+    public String getComplaintStatusName() {
+        return complaintStatusName;
+    }
+
+    public void setComplaintStatusName(String complaintStatusName) {
+        this.complaintStatusName = complaintStatusName;
+    }
+
+    public LocalDateTime getSubmitTime() {
+        return submitTime;
+    }
+
+    public void setSubmitTime(LocalDateTime submitTime) {
+        this.submitTime = submitTime;
+    }
+
+    public Integer getHandlerId() {
+        return handlerId;
+    }
+
+    public void setHandlerId(Integer handlerId) {
+        this.handlerId = handlerId;
+    }
+
+    public String getHandlerName() {
+        return handlerName;
+    }
+
+    public void setHandlerName(String handlerName) {
+        this.handlerName = handlerName;
+    }
+
+    public String getHandlerPhone() {
+        return handlerPhone;
+    }
+
+    public void setHandlerPhone(String handlerPhone) {
+        this.handlerPhone = handlerPhone;
+    }
+
+    public String getReply() {
+        return reply;
+    }
+
+    public void setReply(String reply) {
+        this.reply = reply;
+    }
+
+    public LocalDateTime getReplyTime() {
+        return replyTime;
+    }
+
+    public void setReplyTime(LocalDateTime replyTime) {
+        this.replyTime = replyTime;
+    }
+
+    public Integer getResponseHours() {
+        return responseHours;
+    }
+
+    public void setResponseHours(Integer responseHours) {
+        this.responseHours = responseHours;
+    }
+
+    @Override
+    public String toString() {
+        return "Complaint{" +
+                "complaintId=" + complaintId +
+                ", ownerId='" + ownerId + '\'' +
+                ", ownerName='" + ownerName + '\'' +
+                ", title='" + title + '\'' +
+                ", complaintType='" + complaintType + '\'' +
+                ", complaintStatus='" + complaintStatus + '\'' +
+                ", submitTime=" + submitTime +
+                '}';
     }
 }

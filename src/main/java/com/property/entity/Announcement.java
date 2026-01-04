@@ -1,138 +1,43 @@
 package com.property.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.io.Serializable;
-import java.util.Date;
+import java.sql.Timestamp;
 
-/**
- * 公告实体类
- * 对应数据库表：announcements
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Announcement implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 公告ID（自增主键）
-     */
+public class Announcement {
     private Integer announcementId;
-
-    /**
-     * 标题
-     */
     private String title;
-
-    /**
-     * 内容
-     */
     private String content;
-
-    /**
-     * 公告类型：notice-通知, payment_reminder-缴费提醒, maintenance-维护, emergency-紧急
-     */
-    private String announcementType;
-
-    /**
-     * 优先级：normal-普通, important-重要, urgent-紧急
-     */
-    private String priority;
-
-    /**
-     * 发布人ID
-     */
+    private String announcementType; // notice, payment_reminder, maintenance, emergency
+    private String priority;         // normal, important, urgent
     private Integer publisherId;
-
-    /**
-     * 发布时间
-     */
-    private Date publishTime;
-
-    /**
-     * 过期时间
-     */
-    private Date expiryTime;
-
-    /**
-     * 浏览次数
-     */
+    private Timestamp publishTime;
+    private Timestamp expiryTime;
     private Integer viewCount;
+    private Integer status;          // 1=已发布, 0=草稿/下架
 
-    /**
-     * 状态：1-发布, 0-撤回
-     */
-    private Integer status;
-
-    // 关联查询字段（非数据库字段）
-    /**
-     * 发布人姓名
-     */
+    // 辅助字段（非数据库列）
     private String publisherName;
 
-    /**
-     * 获取公告类型显示名称
-     */
-    public String getAnnouncementTypeDisplay() {
-        if (announcementType == null) {
-            return "未知";
-        }
-        switch (announcementType) {
-            case "notice":
-                return "通知公告";
-            case "payment_reminder":
-                return "缴费提醒";
-            case "maintenance":
-                return "维护通知";
-            case "emergency":
-                return "紧急公告";
-            default:
-                return "未知";
-        }
-    }
-
-    /**
-     * 获取优先级显示名称
-     */
-    public String getPriorityDisplay() {
-        if (priority == null) {
-            return "普通";
-        }
-        switch (priority) {
-            case "normal":
-                return "普通";
-            case "important":
-                return "重要";
-            case "urgent":
-                return "紧急";
-            default:
-                return "普通";
-        }
-    }
-
-    /**
-     * 判断是否已发布
-     */
-    public boolean isPublished() {
-        return Integer.valueOf(1).equals(this.status);
-    }
-
-    /**
-     * 判断是否已过期
-     */
-    public boolean isExpired() {
-        if (expiryTime == null) {
-            return false;
-        }
-        return new Date().after(expiryTime);
-    }
-
-    /**
-     * 判断是否有效
-     */
-    public boolean isValid() {
-        return isPublished() && !isExpired();
-    }
+    // Getters and Setters
+    public Integer getAnnouncementId() { return announcementId; }
+    public void setAnnouncementId(Integer announcementId) { this.announcementId = announcementId; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getAnnouncementType() { return announcementType; }
+    public void setAnnouncementType(String announcementType) { this.announcementType = announcementType; }
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+    public Integer getPublisherId() { return publisherId; }
+    public void setPublisherId(Integer publisherId) { this.publisherId = publisherId; }
+    public Timestamp getPublishTime() { return publishTime; }
+    public void setPublishTime(Timestamp publishTime) { this.publishTime = publishTime; }
+    public Timestamp getExpiryTime() { return expiryTime; }
+    public void setExpiryTime(Timestamp expiryTime) { this.expiryTime = expiryTime; }
+    public Integer getViewCount() { return viewCount; }
+    public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getPublisherName() { return publisherName; }
+    public void setPublisherName(String publisherName) { this.publisherName = publisherName; }
 }

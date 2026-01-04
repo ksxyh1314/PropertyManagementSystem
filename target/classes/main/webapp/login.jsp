@@ -1,13 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 社区物业管理系统</title>
+    <title>系统登录 - 智慧社区物业管理系统</title>
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- 引入 Bootstrap 4 & FontAwesome -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <style>
         body {
@@ -15,219 +17,394 @@
             min-height: 100vh;
             display: flex;
             align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', sans-serif;
         }
+
         .login-card {
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            border-radius: 10px;
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            border: none;
+        }
+
+        .login-header {
+            background: transparent;
+            padding: 40px 30px 20px;
+            text-align: center;
+        }
+
+        .login-header h3 {
+            color: #333;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .login-header p {
+            color: #888;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .login-body {
+            padding: 20px 40px 40px;
+        }
+
+        /* 身份切换按钮组 */
+        .role-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: #f1f3f5;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .role-label {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-bottom: 0;
+        }
+
+        .role-label:hover {
+            color: #333;
+        }
+
+        /* 选中状态 */
+        .role-input:checked + .role-label {
             background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
+
+        .role-input {
+            display: none;
         }
-        .card-body {
-            padding: 40px;
+
+        /* 输入框样式 */
+        .form-group {
+            position: relative;
+            margin-bottom: 20px;
         }
+
+        .form-control {
+            height: 50px;
+            padding-left: 45px;
+            border-radius: 8px;
+            border: 1px solid #e1e1e1;
+            background: #fcfcfc;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            background: #fff;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 17px;
+            color: #aaa;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .form-control:focus + .input-icon {
+            color: #667eea;
+        }
+
+        /* 登录按钮 */
         .btn-login {
+            height: 50px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            padding: 12px;
-            font-size: 16px;
+            border-radius: 8px;
+            color: white;
             font-weight: bold;
-            color: white;
+            font-size: 16px;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
         }
+
         .btn-login:hover {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
             color: white;
         }
+
         .btn-login:disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             cursor: not-allowed;
         }
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+
+        /* 🔥 错误提示样式 */
+        .alert {
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #c53030;
+            border-left: 4px solid #fc8181;
+        }
+
+        /* 🔥 警告提示样式（账号被禁用） */
+        .alert-warning {
+            background: #fffaf0;
+            color: #c05621;
+            border-left: 4px solid #ed8936;
+        }
+
+        .alert i {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        /* 底部提示 */
+        .test-account-box {
+            margin-top: 25px;
+            padding: 12px;
+            background: #fff8e1;
+            border: 1px dashed #ffe082;
+            border-radius: 6px;
+            color: #f57c00;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .copyright {
+            position: absolute;
+            bottom: 20px;
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+        }
+
+        /* 🔥 禁用账号的特殊样式 */
+        .alert-warning .contact-admin {
+            display: block;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #744210;
+        }
+
+        .alert-warning .contact-admin i {
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card login-card">
-                <div class="card-header text-center text-white">
-                    <h3 class="mb-0">🏘️ 社区物业管理系统</h3>
-                    <p class="mb-0 mt-2">Community Property Management System</p>
-                </div>
-                <div class="card-body">
-                    <!-- 错误提示 -->
-                    <div id="errorAlert" class="alert alert-danger alert-dismissible fade show" style="display: none;">
-                        <strong>❌ 登录失败！</strong>
-                        <span id="errorMessage"></span>
-                        <button type="button" class="close" onclick="$('#errorAlert').hide()">
-                            <span>&times;</span>
-                        </button>
-                    </div>
 
-                    <!-- 登录表单 -->
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="username">
-                                <i class="fas fa-user"></i> 👤 用户名
-                            </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="username"
-                                   name="username"
-                                   placeholder="请输入用户名"
-                                   autocomplete="off"
-                                   required>
-                        </div>
+<div class="login-card animate__animated animate__fadeInUp">
+    <div class="login-header">
+        <h3><i class="fas fa-city text-primary mr-2"></i>智慧物业云平台</h3>
+        <p>Smart Community Management System</p>
+    </div>
 
-                        <div class="form-group">
-                            <label for="password">
-                                <i class="fas fa-lock"></i> 🔒 密码
-                            </label>
-                            <input type="password"
-                                   class="form-control"
-                                   id="password"
-                                   name="password"
-                                   placeholder="请输入密码"
-                                   autocomplete="off"
-                                   required>
-                        </div>
+    <div class="login-body">
+        <!-- 🔥 普通错误提示 -->
+        <div id="errorAlert" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorMsg"></span>
+        </div>
 
-                        <button type="submit" class="btn btn-primary btn-block btn-login" id="loginBtn">
-                            登录
-                        </button>
-                    </form>
+        <!-- 🔥 账号被禁用提示 -->
+        <div id="disabledAlert" class="alert alert-warning" style="display: none;">
+            <div>
+                <i class="fas fa-ban"></i>
+                <span id="disabledMsg"></span>
+            </div>
+            <small class="contact-admin">
+                <i class="fas fa-info-circle"></i> 如有疑问，请联系系统管理员
+            </small>
+        </div>
 
-                    <hr class="my-4">
+        <form id="loginForm">
+            <!-- 身份选择 -->
+            <div class="role-group">
+                <input type="radio" id="role_admin" name="role" value="admin" class="role-input" checked onchange="changeRole('admin')">
+                <label for="role_admin" class="role-label"><i class="fas fa-user-shield mr-1"></i> 管理员</label>
 
-                    <div class="text-center text-muted">
-                        <small>💡 测试账号：admin / admin123</small>
-                    </div>
-                </div>
+                <input type="radio" id="role_owner" name="role" value="owner" class="role-input" onchange="changeRole('owner')">
+                <label for="role_owner" class="role-label"><i class="fas fa-home mr-1"></i> 业主</label>
+
+                <input type="radio" id="role_finance" name="role" value="finance" class="role-input" onchange="changeRole('finance')">
+                <label for="role_finance" class="role-label"><i class="fas fa-coins mr-1"></i> 财务</label>
             </div>
 
-            <!-- 版权信息 -->
-            <div class="text-center mt-3 text-white">
-                <small>&copy; 2024 社区物业管理系统</small>
+            <!-- 账号输入 -->
+            <div class="form-group">
+                <input type="text" class="form-control" id="username" name="username" placeholder="请输入账号" required autocomplete="off">
+                <i class="fas fa-user input-icon"></i>
             </div>
+
+            <!-- 密码输入 -->
+            <div class="form-group">
+                <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" required>
+                <i class="fas fa-lock input-icon"></i>
+            </div>
+
+            <button type="submit" class="btn btn-block btn-login" id="loginBtn">
+                立即登录
+            </button>
+        </form>
+
+        <!-- 动态测试账号提示 -->
+        <div class="test-account-box" id="hintBox">
+            <i class="fas fa-lightbulb mr-1"></i>
+            <span id="hintText">管理员账号：admin / admin123</span>
         </div>
     </div>
 </div>
 
-<!-- jQuery -->
+<div class="copyright">
+    &copy; 2025 社区物业管理系统 | Designed by Developer
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
+    // 页面加载时初始化
     $(document).ready(function() {
-        console.log('登录页面加载完成');
+        // 默认聚焦用户名
+        $('#username').focus();
 
-        // 表单提交
+        // 监听回车
+        $(document).keypress(function(e) {
+            if(e.which == 13) {
+                $('#loginBtn').click();
+            }
+        });
+
+        // 登录表单提交
         $('#loginForm').on('submit', function(e) {
-            e.preventDefault(); // 阻止默认提交
+            e.preventDefault();
 
             var username = $('#username').val().trim();
             var password = $('#password').val().trim();
+            var role = $('input[name="role"]:checked').val();
 
-            console.log('准备登录，用户名：' + username);
-
-            // 验证
-            if(!username) {
-                showError('请输入用户名！');
-                return;
-            }
-            if(!password) {
-                showError('请输入密码！');
+            if(!username || !password) {
+                showError('请输入账号和密码');
                 return;
             }
 
-            // 禁用按钮，防止重复提交
-            $('#loginBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span>登录中...');
-            $('#errorAlert').hide();
+            // 按钮加载状态
+            var $btn = $('#loginBtn');
+            var originalText = $btn.text();
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 登录中...');
 
-            // AJAX 提交
+            // 隐藏所有提示
+            $('#errorAlert, #disabledAlert').slideUp();
+
+            // 发送 AJAX 请求
             $.ajax({
                 url: '${pageContext.request.contextPath}/login?action=login',
                 type: 'POST',
                 data: {
                     username: username,
-                    password: password
+                    password: password,
+                    role: role
                 },
                 dataType: 'json',
-                timeout: 10000, // 10秒超时
-                success: function(response) {
-                    console.log('服务器响应：', response);
+                success: function(res) {
+                    console.log('登录响应:', res);
 
-                    if(response.success) {
-                        // 登录成功
-                        console.log('登录成功！');
-                        $('#errorAlert').hide();
-
-                        // 显示成功提示
-                        $('#loginBtn').html('✅ 登录成功！').removeClass('btn-primary').addClass('btn-success');
+                    if(res.success || res.code === 200) {
+                        $btn.html('<i class="fas fa-check"></i> 登录成功').removeClass('btn-login').addClass('btn-success');
 
                         // 延迟跳转
                         setTimeout(function() {
-                            if(response.data) {
-                                console.log('跳转到：' + response.data);
-                                window.location.href = '${pageContext.request.contextPath}/' + response.data;
+                            if(res.data) {
+                                window.location.href = '${pageContext.request.contextPath}/' + res.data;
                             } else {
-                                console.log('跳转到首页');
-                                window.location.href = '${pageContext.request.contextPath}/index.jsp';
+                                if(role === 'admin') window.location.href = '${pageContext.request.contextPath}/admin/index.jsp';
+                                else if(role === 'owner') window.location.href = '${pageContext.request.contextPath}/owner/index.jsp';
+                                else if(role === 'finance') window.location.href = '${pageContext.request.contextPath}/finance/index.jsp';
+                                else window.location.href = '${pageContext.request.contextPath}/index.jsp';
                             }
-                        }, 500);
-
+                        }, 800);
                     } else {
-                        // 登录失败
-                        console.error('登录失败：' + response.message);
-                        showError(response.message || '登录失败，请检查用户名和密码');
-                        resetButton();
+                        // 🔥 判断是否是账号被禁用
+                        var errorMsg = res.message || '登录失败';
+
+                        if(errorMsg.indexOf('已被禁用') !== -1 ||
+                            errorMsg.indexOf('已禁用') !== -1 ||
+                            errorMsg.indexOf('被禁用') !== -1 ||
+                            res.code === 403) {
+                            // 显示禁用警告
+                            showDisabled(errorMsg);
+                        } else {
+                            // 显示普通错误
+                            showError(errorMsg);
+                        }
+
+                        $btn.prop('disabled', false).text(originalText);
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error('请求失败：', xhr, status, error);
-                    console.error('状态码：', xhr.status);
-                    console.error('响应内容：', xhr.responseText);
-
-                    if(xhr.status === 404) {
-                        showError('登录接口不存在（404），请检查服务器配置');
-                    } else if(xhr.status === 500) {
-                        showError('服务器内部错误（500），请查看后台日志');
-                    } else if(status === 'timeout') {
-                        showError('请求超时，请检查网络连接');
-                    } else {
-                        showError('网络错误，请稍后重试');
-                    }
-
-                    resetButton();
+                error: function(xhr) {
+                    console.error('请求失败:', xhr);
+                    showError('服务器连接失败，请检查网络');
+                    $btn.prop('disabled', false).text(originalText);
                 }
             });
         });
-
-        // 显示错误信息
-        function showError(message) {
-            $('#errorMessage').text(message);
-            $('#errorAlert').fadeIn();
-        }
-
-        // 重置按钮
-        function resetButton() {
-            $('#loginBtn').prop('disabled', false).html('登录').removeClass('btn-success').addClass('btn-primary');
-        }
-
-        // 回车登录
-        $('#username, #password').on('keypress', function(e) {
-            if(e.which === 13) {
-                $('#loginForm').submit();
-            }
-        });
     });
+
+    // 切换角色时更新提示文案
+    function changeRole(role) {
+        var hint = '';
+        var user = '';
+        var pass = '';
+
+        if(role === 'admin') {
+            user = 'admin'; pass = 'admin123';
+            hint = '管理员账号：' + user + ' / ' + pass;
+        } else if(role === 'owner') {
+            user = '00010001'; pass = '123456';
+            hint = '业主账号(ID)：' + user + ' / ' + pass;
+        } else if(role === 'finance') {
+            user = 'finance01'; pass = '123456';
+            hint = '财务账号：' + user + ' / ' + pass;
+        }
+
+        // 动画切换提示
+        $('#hintBox').fadeOut(200, function() {
+            $('#hintText').text(hint);
+            $(this).fadeIn(200);
+        });
+    }
+
+    // 🔥 显示普通错误（红色）
+    function showError(msg) {
+        $('#disabledAlert').slideUp();
+        $('#errorMsg').text(msg);
+        $('#errorAlert').slideDown();
+    }
+
+    // 🔥 显示禁用警告（橙色）
+    function showDisabled(msg) {
+        $('#errorAlert').slideUp();
+        $('#disabledMsg').text(msg);
+        $('#disabledAlert').slideDown();
+    }
 </script>
 </body>
 </html>

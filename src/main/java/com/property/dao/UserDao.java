@@ -4,19 +4,23 @@ import com.property.entity.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 用户DAO
+ * 用户DAO（完善版：支持角色和状态筛选）
  */
 public class UserDao extends BaseDao {
 
     /**
-     * 用户登录验证
+     * 用户登录验证 (修改版)
+     * 1. 增加了 role 参数
+     * 2. SQL 中增加了 AND user_role = ?
+     * 3. 密码验证逻辑保持原样 (password = ?)
      */
-    public User login(String username, String password) {
-        String sql = "SELECT * FROM users WHERE username = ? AND password = ? AND status = 1";
-        return queryOne(sql, this::mapUser, username, password);
+    public User login(String username, String password, String role) {
+        String sql = "SELECT * FROM users WHERE username = ? AND password = ? AND user_role = ? AND status = 1";
+        return queryOne(sql, this::mapUser, username, password, role);
     }
 
     /**
@@ -52,7 +56,7 @@ public class UserDao extends BaseDao {
     }
 
     /**
-     * 分页查询用户
+     * 分页查询用户（原版本，保持兼容）
      */
     public List<User> findByPage(int pageNum, int pageSize, String keyword) {
         StringBuilder sql = new StringBuilder();
@@ -79,7 +83,50 @@ public class UserDao extends BaseDao {
     }
 
     /**
-     * 统计用户总数
+     * 🔥 分页查询用户（支持角色和状态筛选）
+     */
+    public List<User> findByPageWithFilter(int pageNum, int pageSize, String keyword, String userRole, Integer status) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT * FROM (");
+        sql.append("  SELECT ROW_NUMBER() OVER (ORDER BY create_time DESC) AS row_num, * ");
+        sql.append("  FROM users WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        // 关键词筛选
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("  AND (username LIKE ? OR real_name LIKE ? OR phone LIKE ?) ");
+            String likeKeyword = "%" + keyword + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        // 🔥 角色筛选
+        if (userRole != null && !userRole.trim().isEmpty()) {
+            sql.append("  AND user_role = ? ");
+            params.add(userRole);
+        }
+
+        // 🔥 状态筛选
+        if (status != null) {
+            sql.append("  AND status = ? ");
+            params.add(status);
+        }
+
+        sql.append(") AS temp ");
+        sql.append("WHERE row_num BETWEEN ? AND ?");
+
+        int start = (pageNum - 1) * pageSize + 1;
+        int end = pageNum * pageSize;
+        params.add(start);
+        params.add(end);
+
+        return query(sql.toString(), this::mapUser, params.toArray());
+    }
+
+    /**
+     * 统计用户总数（原版本，保持兼容）
      */
     public long count(String keyword) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE 1=1 ");
@@ -92,6 +139,54 @@ public class UserDao extends BaseDao {
 
         return queryForLong(sql.toString());
     }
+
+    /**
+     * 🔥 统计用户总数（支持角色和状态筛选）
+     */
+    public long countByFilter(String keyword, String userRole, Integer status) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+
+        // 关键词筛选
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (username LIKE ? OR real_name LIKE ? OR phone LIKE ?) ");
+            String likeKeyword = "%" + keyword + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        // 🔥 角色筛选
+        if (userRole != null && !userRole.trim().isEmpty()) {
+            sql.append("AND user_role = ? ");
+            params.add(userRole);
+        }
+
+        // 🔥 状态筛选
+        if (status != null) {
+            sql.append("AND status = ? ");
+            params.add(status);
+        }
+
+        return queryForLong(sql.toString(), params.toArray());
+    }
+
+    /**
+     * 🔥 根据角色统计用户数量
+     */
+    public long countByRole(String role) {
+        String sql = "SELECT COUNT(*) FROM users WHERE user_role = ?";
+        return queryForLong(sql, role);
+    }
+
+    /**
+     * 🔥 根据状态统计用户数量
+     */
+    public long countByStatus(int status) {
+        String sql = "SELECT COUNT(*) FROM users WHERE status = ?";
+        return queryForLong(sql, status);
+    }
+
 
     /**
      * 添加用户

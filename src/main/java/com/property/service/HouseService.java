@@ -1,6 +1,8 @@
 package com.property.service;
 
 import com.property.dao.HouseDao;
+import com.property.dao.PaymentRecordDao; // ✅ Added
+import com.property.dao.RepairRecordDao;  // ✅ Added
 import com.property.entity.House;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +17,95 @@ import java.util.Map;
  */
 public class HouseService {
     private static final Logger logger = LoggerFactory.getLogger(HouseService.class);
+
     private HouseDao houseDao = new HouseDao();
+
+    // ✅ 新增：引入其他DAO用于检查关联数据
+    // 请确保这两个 DAO 类中已经添加了 countByHouseId(String houseId) 方法
+    private PaymentRecordDao PaymentRecordDao = new PaymentRecordDao();
+    private RepairRecordDao repairRecordDao = new RepairRecordDao();
+
+    // ==================== 🔥 新增：业主端专用方法 ====================
+
+    /**
+     * 根据业主ID查询房屋列表（业主端使用）
+     * @param ownerId 业主ID
+     * @return 房屋列表
+     */
+    public List<House> findByOwnerId(String ownerId) {
+        logger.info(">>> Service: 查询业主房屋，ownerId: {}", ownerId);
+
+        if (ownerId == null || ownerId.trim().isEmpty()) {
+            logger.warn("业主ID为空");
+            throw new IllegalArgumentException("业主ID不能为空");
+        }
+
+        try {
+            List<House> houses = houseDao.findByOwnerId(ownerId);
+            logger.info("✅ Service: 查询到 {} 套房屋", houses.size());
+            return houses;
+        } catch (Exception e) {
+            logger.error("❌ Service 查询业主房屋失败", e);
+            throw new RuntimeException("查询房屋失败：" + e.getMessage(), e);
+        }
+    }
+
+    // ==================== 🔥 统计方法（管理员端使用） ====================
+
+    /**
+     * 获取房屋总数
+     */
+    public int getTotalCount() {
+        try {
+            return houseDao.getTotalCount();
+        } catch (Exception e) {
+            logger.error("获取房屋总数失败", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取已入住房屋数量
+     */
+    public int getOccupiedCount() {
+        try {
+            return houseDao.getOccupiedCount();
+        } catch (Exception e) {
+            logger.error("获取已入住房屋数量失败", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取空置房屋数量
+     */
+    public int getVacantCount() {
+        try {
+            return houseDao.getVacantCount();
+        } catch (Exception e) {
+            logger.error("获取空置房屋数量失败", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取房屋入住率（百分比）
+     */
+    public double getOccupancyRate() {
+        try {
+            int total = getTotalCount();
+            if (total == 0) {
+                return 0.0;
+            }
+            int occupied = getOccupiedCount();
+            return (occupied * 100.0) / total;
+        } catch (Exception e) {
+            logger.error("计算房屋入住率失败", e);
+            return 0.0;
+        }
+    }
+
+    // ==================== ✅ 管理员端原有方法 ====================
 
     /**
      * 根据ID查询房屋
@@ -53,6 +143,13 @@ public class HouseService {
         result.put("totalPages", totalPages);
 
         return result;
+    }
+
+    /**
+     * 根据条件查询房屋（用于导出）
+     */
+    public List<House> findByCondition(String keyword, String status) {
+        return houseDao.findByCondition(keyword, status);
     }
 
     /**
@@ -126,19 +223,52 @@ public class HouseService {
     }
 
     /**
-     * 删除房屋
+     * ✅ 删除房屋 (已修复逻辑)
+     * 增加了对 业主、缴费记录、报修记录 的前置检查
      */
     public boolean deleteHouse(String houseId) {
         if (houseId == null || houseId.trim().isEmpty()) {
             throw new IllegalArgumentException("房屋ID不能为空");
         }
 
-        // 检查房屋是否已分配业主
+        // 1. 检查房屋是否存在
         House house = houseDao.findById(houseId);
-        if (house != null && house.getOwnerId() != null && !house.getOwnerId().trim().isEmpty()) {
-            throw new IllegalArgumentException("房屋已分配业主，不能删除");
+        if (house == null) {
+            throw new IllegalArgumentException("房屋不存在");
         }
 
+        // 2. 检查房屋是否已分配业主
+        if (house.getOwnerId() != null && !house.getOwnerId().trim().isEmpty()) {
+            throw new IllegalArgumentException("该房屋已分配业主（" + house.getOwnerName() + "），请先在业主管理中解绑！");
+        }
+
+        // 3. ✅ 检查是否有历史缴费记录
+        try {
+            // 注意：PaymentRecordDao 需要实现 countByHouseId 方法
+            int paymentCount = PaymentRecordDao.countByHouseId(houseId);
+            if (paymentCount > 0) {
+                throw new IllegalArgumentException("该房屋存在 " + paymentCount + " 条历史缴费记录，禁止删除！");
+            }
+        } catch (Exception e) {
+            // 如果是 IllegalArgumentException 说明是我们自己抛出的，直接向上抛
+            if (e instanceof IllegalArgumentException) throw e;
+            // 其他异常（如数据库错误）记录日志
+            logger.error("检查缴费记录失败", e);
+        }
+
+        // 4. ✅ 检查是否有报修记录
+        try {
+            // 注意：RepairRecordDao 需要实现 countByHouseId 方法
+            int repairCount = repairRecordDao.countByHouseId(houseId);
+            if (repairCount > 0) {
+                throw new IllegalArgumentException("该房屋存在 " + repairCount + " 条报修记录，禁止删除！");
+            }
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) throw e;
+            logger.error("检查报修记录失败", e);
+        }
+
+        // 5. 执行删除
         int rows = houseDao.delete(houseId);
         if (rows > 0) {
             logger.info("删除房屋成功：{}", houseId);
@@ -171,6 +301,16 @@ public class HouseService {
      */
     public Map<String, Long> countByStatus() {
         return houseDao.countByStatus();
+    }
+
+    /**
+     * 根据ID列表查询房屋（用于导出选中数据）
+     */
+    public List<House> findByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("房屋ID列表不能为空");
+        }
+        return houseDao.findByIds(ids);
     }
 
     /**
@@ -216,11 +356,13 @@ public class HouseService {
         if (!house.getFloor().matches("^\\d{2}$")) {
             throw new IllegalArgumentException("楼层必须为2位数字");
         }
+    }
 
-        // 验证房屋编号格式（如"1栋2单元301"）
-        String expectedHouseId = house.getBuildingNo().replaceFirst("^0+", "") + "栋" +
-                house.getUnitNo() + "单元" +
-                house.getFloor().replaceFirst("^0+", "") + "01";
-        // 这里简化验证，实际可以更严格
+    public List<Map<String, Object>> listBuildings() throws Exception {
+        return houseDao.listBuildings();
+    }
+
+    public int countOccupied(String buildingId) throws Exception {
+        return houseDao.countOccupied(buildingId);
     }
 }

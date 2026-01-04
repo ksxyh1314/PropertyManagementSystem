@@ -33,7 +33,7 @@ public class Owner implements Serializable {
     private String phone;
 
     /**
-     * 身份证号（18位，含X）
+     * 身份证号（18位,含X）
      */
     private String idCard;
 
@@ -77,6 +77,11 @@ public class Owner implements Serializable {
      * 房屋信息（关联查询）
      */
     private House house;
+
+    /**
+     * 🔥 新增：业主拥有的房屋数量（非数据库字段，用于前端显示）
+     */
+    private Integer houseCount;
 
     /**
      * 未缴费账单数量

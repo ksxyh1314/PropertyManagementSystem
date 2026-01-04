@@ -2,24 +2,30 @@ package com.property.servlet;
 
 import com.property.entity.User;
 import com.property.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 用户管理Servlet
+ * 用户管理Servlet (修复版 + 支持角色和状态筛选)
  */
 @WebServlet("/admin/user")
 public class UserServlet extends BaseServlet {
+    private static final Logger logger = LoggerFactory.getLogger(UserServlet.class);
     private UserService userService = new UserService();
 
     /**
      * 分页查询用户列表
+     * 🔥 新增：支持角色和状态筛选
      */
     public void list(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -30,12 +36,31 @@ public class UserServlet extends BaseServlet {
         int pageSize = getIntParameter(req, "pageSize", 10);
         String keyword = getStringParameter(req, "keyword");
 
+        // 🔥 新增：获取角色和状态筛选参数
+        String userRole = getStringParameter(req, "userRole");
+        Integer status = getIntParameter(req, "status");
+
         try {
-            Map<String, Object> result = userService.findByPage(pageNum, pageSize, keyword);
-            writeJson(resp, result);
+            // 🔥 修改：调用支持筛选的方法
+            Map<String, Object> serviceResult = userService.findByPage(pageNum, pageSize, keyword, userRole, status);
+
+            // 重组数据格式，适配前端表格组件
+            Map<String, Object> jsonMap = new HashMap<>();
+            jsonMap.put("code", 0);
+            jsonMap.put("msg", "查询成功");
+            jsonMap.put("count", serviceResult.get("total"));
+            jsonMap.put("total", serviceResult.get("total"));
+            jsonMap.put("data", serviceResult.get("list"));
+            jsonMap.put("rows", serviceResult.get("list"));
+
+            writeJson(resp, jsonMap);
+
         } catch (Exception e) {
             logger.error("查询用户列表失败", e);
-            writeError(resp, "查询失败：" + e.getMessage());
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("code", 500);
+            errorMap.put("msg", "加载失败：" + e.getMessage());
+            writeJson(resp, errorMap);
         }
     }
 
@@ -46,7 +71,6 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         try {
             List<User> users = userService.findAll();
             writeSuccess(resp, "查询成功", users);
@@ -63,13 +87,11 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         Integer userId = getIntParameter(req, "userId");
         if (userId == null) {
             writeError(resp, "用户ID不能为空");
             return;
         }
-
         try {
             User user = userService.findById(userId);
             if (user != null) {
@@ -90,7 +112,6 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         String username = getStringParameter(req, "username");
         String password = getStringParameter(req, "password");
         String realName = getStringParameter(req, "realName");
@@ -129,13 +150,11 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         Integer userId = getIntParameter(req, "userId");
         if (userId == null) {
             writeError(resp, "用户ID不能为空");
             return;
         }
-
         String realName = getStringParameter(req, "realName");
         String phone = getStringParameter(req, "phone");
         String idCard = getStringParameter(req, "idCard");
@@ -170,13 +189,11 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         Integer userId = getIntParameter(req, "userId");
         if (userId == null) {
             writeError(resp, "用户ID不能为空");
             return;
         }
-
         try {
             boolean success = userService.deleteUser(userId);
             if (success) {
@@ -197,7 +214,6 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         Integer userId = getIntParameter(req, "userId");
         String newPassword = getStringParameter(req, "newPassword");
 
@@ -209,7 +225,6 @@ public class UserServlet extends BaseServlet {
             writeError(resp, "新密码不能为空");
             return;
         }
-
         try {
             boolean success = userService.resetPassword(userId, newPassword);
             if (success) {
@@ -232,7 +247,6 @@ public class UserServlet extends BaseServlet {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
-
         Integer userId = getIntParameter(req, "userId");
         Integer status = getIntParameter(req, "status");
 
@@ -244,7 +258,6 @@ public class UserServlet extends BaseServlet {
             writeError(resp, "状态不能为空");
             return;
         }
-
         try {
             boolean success = userService.updateStatus(userId, status);
             if (success) {
@@ -255,6 +268,29 @@ public class UserServlet extends BaseServlet {
         } catch (Exception e) {
             logger.error("更新状态失败", e);
             writeError(resp, "更新状态失败：" + e.getMessage());
+        }
+    }
+
+    // 核心分发方法
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json;charset=UTF-8");
+
+        String methodName = req.getParameter("method");
+        if (methodName == null || methodName.trim().isEmpty()) {
+            methodName = req.getParameter("action");
+        }
+        if (methodName == null || methodName.trim().isEmpty()) {
+            methodName = "list";
+        }
+
+        try {
+            Method method = this.getClass().getMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
+            method.invoke(this, req, resp);
+        } catch (Exception e) {
+            logger.error("处理请求失败：method=" + methodName, e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "服务器内部错误");
         }
     }
 }

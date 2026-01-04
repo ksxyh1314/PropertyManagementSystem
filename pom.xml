@@ -12,7 +12,7 @@
     <packaging>war</packaging>
 
     <name>Community Property Management System</name>
-    <description>社区物业管理系统</description>
+    <description>社区物业管理系统 - 基于 JSP + Servlet + SQL Server</description>
 
     <!-- 属性配置 -->
     <properties>
@@ -25,7 +25,7 @@
         <!-- 依赖版本管理 -->
         <servlet.version>4.0.1</servlet.version>
         <jsp.version>2.3.3</jsp.version>
-        <jstl.version>1.2</jstl.version>
+        <jstl.version>1.2.5</jstl.version>
         <mssql.version>9.4.1.jre8</mssql.version>
         <dbcp2.version>2.9.0</dbcp2.version>
         <gson.version>2.10.1</gson.version>
@@ -33,7 +33,13 @@
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.12</logback.version>
         <poi.version>5.2.5</poi.version>
+        <log4j.version>2.20.0</log4j.version>
         <junit.version>4.13.2</junit.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <commons-io.version>2.15.1</commons-io.version>
+        <commons-fileupload.version>1.5</commons-fileupload.version>
+        <hutool.version>5.8.24</hutool.version>
     </properties>
 
     <!-- 依赖配置 -->
@@ -56,18 +62,28 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JSTL 标签库 -->
+        <!-- JSTL 标签库 - 使用更安全的版本 -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>jstl</artifactId>
-            <version>${jstl.version}</version>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>1.2.6</version>
         </dependency>
 
-        <!-- JSTL 实现 -->
+        <!-- Jakarta Standard Tag Library Implementation -->
         <dependency>
-            <groupId>taglibs</groupId>
-            <artifactId>standard</artifactId>
-            <version>1.1.2</version>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jstl-impl</artifactId>
+            <version>1.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet.jsp</groupId>
+                    <artifactId>jsp-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- ==================== 数据库相关依赖 ==================== -->
@@ -116,21 +132,21 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
+            <version>${commons-lang3.version}</version>
         </dependency>
 
         <!-- Apache Commons Collections4 (集合工具类) -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>4.4</version>
+            <version>${commons-collections4.version}</version>
         </dependency>
 
         <!-- Apache Commons IO (IO 工具类) -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.15.1</version>
+            <version>${commons-io.version}</version>
         </dependency>
 
         <!-- ==================== 日志相关依赖 ==================== -->
@@ -163,13 +179,6 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>${poi.version}</version>
-            <exclusions>
-                <!-- 排除冲突的依赖 -->
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Apache POI OOXML (Excel 2007+) -->
@@ -177,12 +186,27 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+
+        <!-- ✅ Log4j2 API（POI 5.x 必需） -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- ✅ Log4j2 Core -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- ✅ Log4j2 到 SLF4J 桥接（让 POI 的日志输出到 Logback） -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
 
         <!-- ==================== 文件上传依赖 ==================== -->
@@ -191,7 +215,7 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.5</version>
+            <version>${commons-fileupload.version}</version>
         </dependency>
 
         <!-- ==================== 测试相关依赖 ==================== -->
@@ -232,14 +256,28 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.24</version>
+            <version>${hutool.version}</version>
+        </dependency>
+
+        <!-- Apache Commons Codec (加密解密) -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.16.0</version>
+        </dependency>
+
+        <!-- Apache Commons BeanUtils (Bean 工具) -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.4</version>
         </dependency>
     </dependencies>
 
     <!-- 构建配置 -->
     <build>
         <!-- 最终生成的 WAR 包名称 -->
-        <finalName>property-management</finalName>
+        <finalName>PropertyManagementSystem</finalName>
 
         <!-- 资源文件配置 -->
         <resources>
@@ -249,8 +287,17 @@
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                     <include>**/*.json</include>
+                    <include>**/*.yml</include>
+                    <include>**/*.yaml</include>
                 </includes>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+                <filtering>false</filtering>
             </resource>
         </resources>
 
@@ -277,14 +324,12 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.4.0</version>
                 <configuration>
-                    <!-- 忽略 web.xml 缺失错误 (使用注解配置) -->
                     <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <!-- 排除不需要打包的文件 -->
                     <packagingExcludes>
                         WEB-INF/classes/test/**,
-                        WEB-INF/classes/**/*.log
+                        WEB-INF/classes/**/*.log,
+                        WEB-INF/classes/**/*.md
                     </packagingExcludes>
-                    <!-- Web 资源配置 -->
                     <webResources>
                         <resource>
                             <directory>src/main/webapp</directory>
@@ -301,46 +346,43 @@
                 <version>3.3.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <!-- 不过滤二进制文件 -->
                     <nonFilteredFileExtensions>
                         <nonFilteredFileExtension>ttf</nonFilteredFileExtension>
                         <nonFilteredFileExtension>woff</nonFilteredFileExtension>
                         <nonFilteredFileExtension>woff2</nonFilteredFileExtension>
                         <nonFilteredFileExtension>eot</nonFilteredFileExtension>
                         <nonFilteredFileExtension>ico</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>png</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>jpg</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>jpeg</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>gif</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>svg</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>xls</nonFilteredFileExtension>
                     </nonFilteredFileExtensions>
                 </configuration>
             </plugin>
 
-            <!-- Tomcat 7 Maven 插件 (用于开发测试) -->
+            <!-- Tomcat 7 Maven 插件 -->
             <plugin>
                 <groupId>org.apache.tomcat.maven</groupId>
                 <artifactId>tomcat7-maven-plugin</artifactId>
                 <version>2.2</version>
                 <configuration>
-                    <!-- 应用路径 -->
-                    <path>/property-management</path>
-                    <!-- 端口 -->
+                    <path>/PropertyManagementSystem</path>
                     <port>8080</port>
-                    <!-- 字符编码 -->
                     <uriEncoding>UTF-8</uriEncoding>
-                    <!-- Tomcat 管理地址 (用于远程部署) -->
-                    <url>http://localhost:8080/manager/text</url>
-                    <!-- Tomcat 管理员账号 -->
-                    <server>tomcat7</server>
                 </configuration>
             </plugin>
 
-            <!-- Maven Surefire 插件 (单元测试) -->
+            <!-- Maven Surefire 插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.3</version>
                 <configuration>
-                    <!-- 跳过测试 -->
                     <skipTests>false</skipTests>
-                    <!-- 测试失败继续构建 -->
-                    <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
             </plugin>
 
@@ -349,20 +391,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <version>3.3.2</version>
-            </plugin>
-
-            <!-- Maven Install 插件 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>3.1.1</version>
-            </plugin>
-
-            <!-- Maven Deploy 插件 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.1.1</version>
             </plugin>
         </plugins>
     </build>
@@ -397,7 +425,7 @@
         </profile>
     </profiles>
 
-    <!-- Maven 仓库配置 (可选，加速下载) -->
+    <!-- Maven 仓库配置 -->
     <repositories>
         <repository>
             <id>aliyun-maven</id>

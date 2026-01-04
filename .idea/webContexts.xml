@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebContextManager">
+    <option name="state">
+      <map>
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/announcement.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/complaint.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/house.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/index.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/payment.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/admin/repair.jsp" value="file://$PROJECT_DIR$/src/main/webapp/admin" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/finance/finance.jsp" value="file://$PROJECT_DIR$/src/main/webapp/finance" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/finance/index.jsp" value="file://$PROJECT_DIR$/src/main/webapp/finance" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/finance/payment.jsp" value="file://$PROJECT_DIR$/src/main/webapp/finance" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/owner/announcement.jsp" value="file://$PROJECT_DIR$/src/main/webapp/owner" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/owner/complaint.jsp" value="file://$PROJECT_DIR$/src/main/webapp/owner" />
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/owner/payment.jsp" value="file://$PROJECT_DIR$/src/main/webapp/owner" />
+      </map>
+    </option>
+  </component>
+</project>
