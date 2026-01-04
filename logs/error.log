@@ -1,0 +1,6 @@
+2025-12-25 15:03:06.899 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (没有为集成身份验证配置驱动程序。 ClientConnectionId:9ff9a286-01b3-4a40-bfbf-2b7033906954)
+2025-12-25 15:06:26.905 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:bc22e852-3208-41eb-bdda-5b68eb775688)
+2025-12-25 15:09:54.936 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:df306feb-13ab-40c2-a678-c24941224778)
+2025-12-25 15:13:02.841 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:c7cbb441-ad12-488b-9b1c-6d2f8c673f30)
+2025-12-25 15:17:22.998 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:e5b787fd-0148-4403-8268-83b41e306afa)
+2025-12-25 21:34:31.344 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:633191ce-ed8f-419b-9a1e-e2af4a34b061)

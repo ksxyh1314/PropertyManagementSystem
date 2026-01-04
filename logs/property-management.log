@@ -1,0 +1,38 @@
+2025-12-25 15:02:52.409 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:02:52.412 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost:1433;databaseName=PropertyManagementSystem;integratedSecurity=true;encrypt=false;trustServerCertificate=true
+2025-12-25 15:02:52.415 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:03:06.899 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (没有为集成身份验证配置驱动程序。 ClientConnectionId:9ff9a286-01b3-4a40-bfbf-2b7033906954)
+2025-12-25 15:06:26.309 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:06:26.314 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost:1433;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 15:06:26.316 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:06:26.905 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:bc22e852-3208-41eb-bdda-5b68eb775688)
+2025-12-25 15:09:54.305 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:09:54.309 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost:1433;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 15:09:54.311 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:09:54.936 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:df306feb-13ab-40c2-a678-c24941224778)
+2025-12-25 15:13:02.265 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:13:02.273 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost\SQL2022_DEV:1433;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 15:13:02.275 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:13:02.841 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:c7cbb441-ad12-488b-9b1c-6d2f8c673f30)
+2025-12-25 15:17:22.363 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:17:22.368 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost\SQL2022_DEV:1433;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 15:17:22.373 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:17:22.998 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:e5b787fd-0148-4403-8268-83b41e306afa)
+2025-12-25 15:18:24.397 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 15:18:24.401 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost;instanceName=SQL2022_DEV;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 15:18:24.404 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 15:18:25.291 [main] DEBUG com.property.util.DBUtil - ✅ 获取数据库连接成功 [活跃: 1, 空闲: 4]
+2025-12-25 15:18:25.332 [main] DEBUG com.property.util.DBUtil - ✅ ResultSet 已关闭
+2025-12-25 15:18:25.332 [main] DEBUG com.property.util.DBUtil - ✅ Statement 已关闭
+2025-12-25 15:18:25.332 [main] DEBUG com.property.util.DBUtil - ✅ Connection 已关闭 [活跃: 0, 空闲: 5]
+2025-12-25 21:34:31.049 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 21:34:31.053 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 21:34:31.054 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 21:34:31.344 [main] ERROR com.property.util.DBUtil - ❌ 获取数据库连接失败: Cannot create PoolableConnectionFactory (用户 'sa' 登录失败。 ClientConnectionId:633191ce-ed8f-419b-9a1e-e2af4a34b061)
+2025-12-25 21:36:13.749 [main] INFO  com.property.util.DBUtil - ✅ 数据库连接池初始化成功
+2025-12-25 21:36:13.754 [main] INFO  com.property.util.DBUtil - 📍 数据库地址: jdbc:sqlserver://localhost;instanceName=SQL2022_DEV;databaseName=PropertyManagementSystem;encrypt=false;trustServerCertificate=true
+2025-12-25 21:36:13.756 [main] INFO  com.property.util.DBUtil - 📊 连接池配置: 初始=5, 最小=5, 最大=20
+2025-12-25 21:36:14.436 [main] DEBUG com.property.util.DBUtil - ✅ 获取数据库连接成功 [活跃: 1, 空闲: 4]
+2025-12-25 21:36:14.482 [main] DEBUG com.property.util.DBUtil - ✅ ResultSet 已关闭
+2025-12-25 21:36:14.482 [main] DEBUG com.property.util.DBUtil - ✅ Statement 已关闭
+2025-12-25 21:36:14.482 [main] DEBUG com.property.util.DBUtil - ✅ Connection 已关闭 [活跃: 0, 空闲: 5]
