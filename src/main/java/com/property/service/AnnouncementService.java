@@ -2,15 +2,17 @@ package com.property.service;
 
 import com.property.dao.AnnouncementDao;
 import com.property.entity.Announcement;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 公告服务层
+ * 公告服务层（增加日志记录）
  */
 public class AnnouncementService {
 
@@ -88,7 +90,8 @@ public class AnnouncementService {
             throw new RuntimeException("查询公告详情失败", e);
         }
     }
-// 🔥🔥🔥 新增：带关键词搜索的方法 🔥🔥🔥
+
+    // 🔥🔥🔥 新增：带关键词搜索的方法 🔥🔥🔥
 
     /**
      * ✅ 获取已发布的公告列表（业主端 - 支持搜索）
@@ -193,7 +196,7 @@ public class AnnouncementService {
         }
     }
 
-    // ========== 管理员端方法（保留原有的） ==========
+    // ========== 管理员端方法（保留原有的 + 增加日志记录） ==========
 
     /**
      * ✅ 分页查询公告（管理员端 - 支持筛选）
@@ -246,9 +249,16 @@ public class AnnouncementService {
     }
 
     /**
-     * 添加公告
+     * 添加公告（支持不传 request）
      */
     public boolean addAnnouncement(Announcement announcement) {
+        return addAnnouncement(announcement, null);
+    }
+
+    /**
+     * 添加公告（✅ 增加日志记录）
+     */
+    public boolean addAnnouncement(Announcement announcement, HttpServletRequest request) {
         logger.info("========== 添加公告 ==========");
         logger.info("标题: {}", announcement.getTitle());
 
@@ -256,6 +266,16 @@ public class AnnouncementService {
             int rows = announcementDao.insert(announcement);
             if (rows > 0) {
                 logger.info("✅ 添加公告成功");
+
+                // ✅ 记录日志
+                if (request != null) {
+                    LogUtil.logPublishAnnouncement(
+                            announcement.getAnnouncementId(),
+                            announcement.getTitle(),
+                            request
+                    );
+                }
+
                 return true;
             }
             return false;
@@ -266,9 +286,16 @@ public class AnnouncementService {
     }
 
     /**
-     * 更新公告
+     * 更新公告（支持不传 request）
      */
     public boolean updateAnnouncement(Announcement announcement) {
+        return updateAnnouncement(announcement, null);
+    }
+
+    /**
+     * 更新公告（✅ 增加日志记录）
+     */
+    public boolean updateAnnouncement(Announcement announcement, HttpServletRequest request) {
         logger.info("========== 更新公告 ==========");
         logger.info("公告ID: {}, 标题: {}", announcement.getAnnouncementId(), announcement.getTitle());
 
@@ -276,6 +303,16 @@ public class AnnouncementService {
             int rows = announcementDao.update(announcement);
             if (rows > 0) {
                 logger.info("✅ 更新公告成功");
+
+                // ✅ 记录日志
+                if (request != null) {
+                    LogUtil.logUpdateAnnouncement(
+                            announcement.getAnnouncementId(),
+                            announcement.getTitle(),
+                            request
+                    );
+                }
+
                 return true;
             }
             return false;
@@ -286,16 +323,33 @@ public class AnnouncementService {
     }
 
     /**
-     * 删除公告
+     * 删除公告（支持不传 request）
      */
     public boolean deleteAnnouncement(int announcementId) {
+        return deleteAnnouncement(announcementId, null);
+    }
+
+    /**
+     * 删除公告（✅ 增加日志记录）
+     */
+    public boolean deleteAnnouncement(int announcementId, HttpServletRequest request) {
         logger.info("========== 删除公告 ==========");
         logger.info("公告ID: {}", announcementId);
 
         try {
+            // 先查询公告信息（用于日志）
+            Announcement announcement = announcementDao.findById(announcementId);
+            String title = announcement != null ? announcement.getTitle() : "未知";
+
             int rows = announcementDao.delete(announcementId);
             if (rows > 0) {
                 logger.info("✅ 删除公告成功");
+
+                // ✅ 记录日志
+                if (request != null) {
+                    LogUtil.logDeleteAnnouncement(announcementId, title, request);
+                }
+
                 return true;
             }
             return false;
@@ -306,9 +360,16 @@ public class AnnouncementService {
     }
 
     /**
-     * 更新公告状态
+     * 更新公告状态（支持不传 request）
      */
     public boolean updateAnnouncementStatus(int announcementId, int status) {
+        return updateAnnouncementStatus(announcementId, status, null);
+    }
+
+    /**
+     * 更新公告状态（✅ 增加日志记录）
+     */
+    public boolean updateAnnouncementStatus(int announcementId, int status, HttpServletRequest request) {
         logger.info("========== 更新公告状态 ==========");
         logger.info("公告ID: {}, 状态: {}", announcementId, status);
 
@@ -326,6 +387,19 @@ public class AnnouncementService {
 
             if (rows > 0) {
                 logger.info("✅ 更新公告状态成功");
+
+                // ✅ 记录日志
+                if (request != null) {
+                    String statusDesc = status == 1 ? "发布" : "撤回";
+                    LogUtil.log(
+                            getUserId(request),
+                            getUsername(request),
+                            "announcement_status",
+                            statusDesc + "公告：" + announcement.getTitle() + "（ID:" + announcementId + "）",
+                            LogUtil.getClientIP(request)
+                    );
+                }
+
                 return true;
             }
             return false;
@@ -336,21 +410,41 @@ public class AnnouncementService {
     }
 
     /**
-     * 批量更新状态
+     * 批量更新状态（支持不传 request）
      */
     public boolean batchUpdateStatus(List<Integer> ids, int status) {
+        return batchUpdateStatus(ids, status, null);
+    }
+
+    /**
+     * 批量更新状态（✅ 增加日志记录）
+     */
+    public boolean batchUpdateStatus(List<Integer> ids, int status, HttpServletRequest request) {
         logger.info("========== 批量更新公告状态 ==========");
         logger.info("公告数量: {}, 状态: {}", ids.size(), status);
 
         try {
             int successCount = 0;
             for (Integer id : ids) {
-                if (updateAnnouncementStatus(id, status)) {
+                if (updateAnnouncementStatus(id, status, request)) {
                     successCount++;
                 }
             }
 
             logger.info("✅ 批量更新完成，成功: {}/{}", successCount, ids.size());
+
+            // ✅ 记录批量操作日志
+            if (request != null) {
+                String statusDesc = status == 1 ? "发布" : "撤回";
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "announcement_batch_status",
+                        "批量" + statusDesc + "公告，共" + successCount + "条",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return successCount == ids.size();
         } catch (Exception e) {
             logger.error("❌ 批量更新状态失败", e);
@@ -359,21 +453,40 @@ public class AnnouncementService {
     }
 
     /**
-     * 批量删除
+     * 批量删除（支持不传 request）
      */
     public boolean batchDelete(List<Integer> ids) {
+        return batchDelete(ids, null);
+    }
+
+    /**
+     * 批量删除（✅ 增加日志记录）
+     */
+    public boolean batchDelete(List<Integer> ids, HttpServletRequest request) {
         logger.info("========== 批量删除公告 ==========");
         logger.info("公告数量: {}", ids.size());
 
         try {
             int successCount = 0;
             for (Integer id : ids) {
-                if (deleteAnnouncement(id)) {
+                if (deleteAnnouncement(id, request)) {
                     successCount++;
                 }
             }
 
             logger.info("✅ 批量删除完成，成功: {}/{}", successCount, ids.size());
+
+            // ✅ 记录批量操作日志
+            if (request != null) {
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "announcement_batch_delete",
+                        "批量删除公告，共" + successCount + "条",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return successCount == ids.size();
         } catch (Exception e) {
             logger.error("❌ 批量删除失败", e);
@@ -404,6 +517,36 @@ public class AnnouncementService {
         } catch (Exception e) {
             logger.error("❌ 查询统计数据失败", e);
             throw new RuntimeException("查询统计数据失败", e);
+        }
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 从 Session 获取当前用户ID
+     */
+    private Integer getUserId(HttpServletRequest request) {
+        if (request == null) return 0;
+        try {
+            Object userId = request.getSession(false) != null ?
+                    request.getSession(false).getAttribute("userId") : null;
+            return userId != null ? (Integer) userId : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 从 Session 获取当前用户名
+     */
+    private String getUsername(HttpServletRequest request) {
+        if (request == null) return "system";
+        try {
+            Object username = request.getSession(false) != null ?
+                    request.getSession(false).getAttribute("username") : null;
+            return username != null ? username.toString() : "system";
+        } catch (Exception e) {
+            return "system";
         }
     }
 }

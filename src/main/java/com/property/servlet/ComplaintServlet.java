@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 投诉管理 Servlet
+ * 投诉管理 Servlet（✅ 增加日志记录）
  * 修改记录：移除了单独的 close 接口，保留 cancel 接口用于处理驳回/取消
  */
 @WebServlet(
@@ -143,7 +143,7 @@ public class ComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 提交投诉
+     * 提交投诉（✅ 使用存储过程 sp_submit_complaint，已包含日志记录）
      */
     private void submitComplaint(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -164,6 +164,7 @@ public class ComplaintServlet extends HttpServlet {
             Complaint complaint = gson.fromJson(jsonBody, Complaint.class);
             System.out.println("解析后的投诉对象: " + complaint);
 
+            // ✅ 使用存储过程，已包含日志记录，不需要传 request
             Map<String, Object> result = complaintService.submitComplaint(complaint);
             System.out.println("服务层返回结果: " + result);
 
@@ -269,7 +270,7 @@ public class ComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 受理投诉
+     * 受理投诉（✅ 使用存储过程 sp_accept_complaint，已包含日志记录）
      */
     private void acceptComplaint(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -283,6 +284,7 @@ public class ComplaintServlet extends HttpServlet {
             Integer complaintId = Integer.parseInt(complaintIdStr);
             Integer handlerId = Integer.parseInt(handlerIdStr);
 
+            // ✅ 使用存储过程，已包含日志记录，不需要传 request
             Map<String, Object> result = complaintService.acceptComplaint(complaintId, handlerId);
             System.out.println("服务层返回结果: " + result);
 
@@ -299,7 +301,7 @@ public class ComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 回复投诉
+     * 回复投诉（✅ 使用存储过程 sp_reply_complaint，已包含日志记录）
      */
     private void replyComplaint(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -325,6 +327,7 @@ public class ComplaintServlet extends HttpServlet {
             String reply = (String) params.get("reply");
             String newStatus = (String) params.getOrDefault("newStatus", "resolved");
 
+            // ✅ 使用存储过程，已包含日志记录，不需要传 request
             Map<String, Object> result = complaintService.replyComplaint(
                     complaintId, handlerId, reply, newStatus);
             System.out.println("服务层返回结果: " + result);
@@ -339,7 +342,7 @@ public class ComplaintServlet extends HttpServlet {
     }
 
     /**
-     * ✅ 取消/驳回投诉
+     * ✅ 取消/驳回投诉（✅ 需要记录日志，传入 request）
      * 现实逻辑：
      * 1. 业主只能取消 "待处理" 的投诉。
      * 2. 管理员可以驳回 "待处理" 或 "处理中" 的投诉。
@@ -376,9 +379,8 @@ public class ComplaintServlet extends HttpServlet {
                 reason = "[管理员驳回] " + reason;
             }
 
-            // 4. 调用 Service
-            // 注意：Service 层需要有 cancelComplaint(int, String, User) 方法
-            Map<String, Object> result = complaintService.cancelComplaint(complaintId, reason, currentUser);
+            // 4. ✅ 调用 Service，传入 request 记录日志
+            Map<String, Object> result = complaintService.cancelComplaint(complaintId, reason, currentUser, request);
 
             System.out.println("服务层返回结果: " + result);
             ResponseUtil.writeJson(response, result);
@@ -394,7 +396,7 @@ public class ComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 删除投诉
+     * 删除投诉（✅ 使用存储过程 sp_delete_complaint，已包含日志记录）
      */
     private void deleteComplaint(HttpServletRequest request, HttpServletResponse response,
                                  String pathInfo) throws IOException {
@@ -420,6 +422,8 @@ public class ComplaintServlet extends HttpServlet {
             }
 
             int operatorId = currentUser.getUserId();
+
+            // ✅ 使用存储过程，已包含日志记录，不需要传 request
             Map<String, Object> result = complaintService.deleteComplaint(complaintId, operatorId);
             System.out.println("服务层返回结果: " + result);
 

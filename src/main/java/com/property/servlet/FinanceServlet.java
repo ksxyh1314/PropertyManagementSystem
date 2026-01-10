@@ -16,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * 财务管理Servlet
+ * 财务管理Servlet（✅ 增加日志记录）
  *
  * @author PropertyManagementSystem
  * @version 1.0
@@ -249,7 +249,7 @@ public class FinanceServlet extends BaseServlet {
     }
 
     /**
-     * 生成催缴通知
+     * ✅ 生成催缴通知（增加日志记录）
      */
     public void generatePaymentReminder(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -284,9 +284,11 @@ public class FinanceServlet extends BaseServlet {
                 }
 
                 try {
+                    // ✅ 传入 request 参数记录日志
                     boolean success = financeService.generatePaymentReminder(
                             trimmedId,
-                            currentUser.getUserId()
+                            currentUser.getUserId(),
+                            req  // ✅ 传入 request
                     );
 
                     if (success) {

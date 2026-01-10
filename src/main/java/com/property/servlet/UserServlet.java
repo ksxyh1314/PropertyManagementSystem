@@ -2,6 +2,7 @@ package com.property.servlet;
 
 import com.property.entity.User;
 import com.property.service.UserService;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 用户管理Servlet (修复版 + 支持角色和状态筛选)
+ * 用户管理Servlet (完整版：支持角色和状态筛选 + 日志记录)
  */
 @WebServlet("/admin/user")
 public class UserServlet extends BaseServlet {
@@ -106,7 +107,7 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 添加用户
+     * 添加用户（✅ 增加日志记录）
      */
     public void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -129,7 +130,8 @@ public class UserServlet extends BaseServlet {
         user.setStatus(1);
 
         try {
-            Integer userId = userService.addUser(user);
+            // ✅ 传入 request 参数
+            Integer userId = userService.addUser(user, req);
             if (userId != null) {
                 writeSuccess(resp, "添加用户成功", userId);
             } else {
@@ -144,7 +146,7 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 更新用户
+     * 更新用户（✅ 增加日志记录）
      */
     public void update(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -168,7 +170,8 @@ public class UserServlet extends BaseServlet {
         user.setStatus(status);
 
         try {
-            boolean success = userService.updateUser(user);
+            // ✅ 传入 request 参数
+            boolean success = userService.updateUser(user, req);
             if (success) {
                 writeSuccess(resp, "更新用户成功");
             } else {
@@ -183,7 +186,7 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 删除用户
+     * 删除用户（✅ 增加日志记录）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -195,7 +198,8 @@ public class UserServlet extends BaseServlet {
             return;
         }
         try {
-            boolean success = userService.deleteUser(userId);
+            // ✅ 传入 request 参数
+            boolean success = userService.deleteUser(userId, req);
             if (success) {
                 writeSuccess(resp, "删除用户成功");
             } else {
@@ -208,7 +212,7 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 重置密码
+     * 重置密码（✅ 增加日志记录）
      */
     public void resetPassword(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -226,7 +230,8 @@ public class UserServlet extends BaseServlet {
             return;
         }
         try {
-            boolean success = userService.resetPassword(userId, newPassword);
+            // ✅ 传入 request 参数
+            boolean success = userService.resetPassword(userId, newPassword, req);
             if (success) {
                 writeSuccess(resp, "重置密码成功");
             } else {
@@ -241,7 +246,7 @@ public class UserServlet extends BaseServlet {
     }
 
     /**
-     * 启用/禁用用户
+     * 启用/禁用用户（✅ 增加日志记录）
      */
     public void updateStatus(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -259,7 +264,8 @@ public class UserServlet extends BaseServlet {
             return;
         }
         try {
-            boolean success = userService.updateStatus(userId, status);
+            // ✅ 传入 request 参数
+            boolean success = userService.updateStatus(userId, status, req);
             if (success) {
                 writeSuccess(resp, "更新状态成功");
             } else {
@@ -268,6 +274,70 @@ public class UserServlet extends BaseServlet {
         } catch (Exception e) {
             logger.error("更新状态失败", e);
             writeError(resp, "更新状态失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 修改密码（✅ 增加日志记录）
+     */
+    public void changePassword(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Integer userId = (Integer) req.getSession().getAttribute("userId");
+        if (userId == null) {
+            writeError(resp, "请先登录");
+            return;
+        }
+
+        String oldPassword = getStringParameter(req, "oldPassword");
+        String newPassword = getStringParameter(req, "newPassword");
+
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            writeError(resp, "原密码不能为空");
+            return;
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            writeError(resp, "新密码不能为空");
+            return;
+        }
+
+        try {
+            // ✅ 传入 request 参数
+            boolean success = userService.changePassword(userId, oldPassword, newPassword, req);
+            if (success) {
+                writeSuccess(resp, "修改密码成功，请重新登录");
+                // 清除 Session，要求重新登录
+                req.getSession().invalidate();
+            } else {
+                writeError(resp, "修改密码失败");
+            }
+        } catch (IllegalArgumentException e) {
+            writeError(resp, e.getMessage());
+        } catch (Exception e) {
+            logger.error("修改密码失败", e);
+            writeError(resp, "修改密码失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 🔥 统计用户数据（按角色和状态）
+     */
+    public void statistics(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!checkRole(req, resp, "admin")) {
+            return;
+        }
+
+        try {
+            Map<String, Long> roleCount = userService.countByRole();
+            Map<String, Long> statusCount = userService.countByStatus();
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("roleCount", roleCount);
+            result.put("statusCount", statusCount);
+
+            writeSuccess(resp, "查询成功", result);
+
+        } catch (Exception e) {
+            logger.error("统计用户数据失败", e);
+            writeError(resp, "统计失败：" + e.getMessage());
         }
     }
 
@@ -290,7 +360,33 @@ public class UserServlet extends BaseServlet {
             method.invoke(this, req, resp);
         } catch (Exception e) {
             logger.error("处理请求失败：method=" + methodName, e);
+
+            // ✅ 记录异常日志
+            LogUtil.log(
+                    getUserIdFromSession(req),
+                    getUsernameFromSession(req),
+                    "error",
+                    "请求处理失败：method=" + methodName + "，错误：" + e.getMessage(),
+                    LogUtil.getClientIP(req)
+            );
+
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "服务器内部错误");
         }
+    }
+
+    /**
+     * 从 Session 获取用户ID
+     */
+    private Integer getUserIdFromSession(HttpServletRequest req) {
+        Object userId = req.getSession().getAttribute("userId");
+        return userId != null ? (Integer) userId : 0;
+    }
+
+    /**
+     * 从 Session 获取用户名
+     */
+    private String getUsernameFromSession(HttpServletRequest req) {
+        Object username = req.getSession().getAttribute("username");
+        return username != null ? username.toString() : "anonymous";
     }
 }

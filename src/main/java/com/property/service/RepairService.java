@@ -2,18 +2,28 @@ package com.property.service;
 
 import com.property.dao.RepairRecordDao;
 import com.property.entity.RepairRecord;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 报修服务类（✅ 保留触发器版本）
+ *
+ * 日志记录规则：
+ * - 提交报修：触发器 trg_after_repair_submit 自动记录
+ * - 完成报修：触发器 trg_after_repair_complete 自动记录
+ * - 其他操作：Java 代码记录
+ */
 public class RepairService {
     private static final Logger logger = LoggerFactory.getLogger(RepairService.class);
     private RepairRecordDao repairRecordDao = new RepairRecordDao();
 
-    // ==================== 原有方法（保持不变）====================
+    // ==================== 原有方法 ====================
 
     /**
      * 根据ID查询
@@ -53,17 +63,25 @@ public class RepairService {
     }
 
     /**
-     * 提交报修
+     * ✅ 提交报修（不记录日志，触发器会自动记录）
      */
     public Integer submitRepair(RepairRecord record) {
-        // 可以添加业务验证
-        return repairRecordDao.insert(record);
+        Integer repairId = repairRecordDao.insert(record);
+
+        if (repairId != null && repairId > 0) {
+            logger.info("✅ 提交报修成功：repairId={}, ownerId={} (触发器已自动记录日志)",
+                    repairId, record.getOwnerId());
+            // ✅ 不记录日志，触发器 trg_after_repair_submit 会自动记录
+        }
+
+        return repairId;
     }
 
     /**
-     * 受理报修
+     * ✅ 受理报修（增加日志记录）
      */
-    public boolean acceptRepair(Integer repairId, String handler, String handlerPhone) {
+    public boolean acceptRepair(Integer repairId, String handler, String handlerPhone,
+                                Integer operatorId, HttpServletRequest request) {
         // 验证状态
         RepairRecord record = repairRecordDao.findById(repairId);
         if (record == null) {
@@ -74,11 +92,30 @@ public class RepairService {
         }
 
         int result = repairRecordDao.acceptRepair(repairId, handler, handlerPhone);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 受理报修成功：repairId={}, handler={}", repairId, handler);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        getUsername(request),
+                        "repair_accept",
+                        "受理报修：单号" + repairId + "，处理人：" + handler +
+                                "，业主：" + record.getOwnerName() + "（" + record.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 完成报修
+     * ✅ 完成报修（不记录日志，触发器会自动记录）
      */
     public boolean completeRepair(Integer repairId, String repairResult) {
         RepairRecord record = repairRecordDao.findById(repairId);
@@ -90,13 +127,20 @@ public class RepairService {
         }
 
         int result = repairRecordDao.completeRepair(repairId, repairResult);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 完成报修成功：repairId={} (触发器已自动记录日志)", repairId);
+            // ✅ 不记录日志，触发器 trg_after_repair_complete 会自动记录
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 取消报修（无原因）
+     * ✅ 取消报修（无原因，增加日志记录）
      */
-    public boolean cancelRepair(Integer repairId) {
+    public boolean cancelRepair(Integer repairId, Integer operatorId, HttpServletRequest request) {
         RepairRecord record = repairRecordDao.findById(repairId);
         if (record == null) {
             throw new IllegalArgumentException("报修记录不存在");
@@ -108,13 +152,33 @@ public class RepairService {
         }
 
         int result = repairRecordDao.cancelRepair(repairId);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 取消报修成功：repairId={}", repairId);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        getUsername(request),
+                        "repair_cancel",
+                        "取消报修：单号" + repairId +
+                                "，业主：" + record.getOwnerName() + "（" + record.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 取消报修（带原因）- 新增方法
+     * ✅ 取消报修（带原因，增加日志记录）
      */
-    public boolean cancelRepair(Integer repairId, String cancelReason) {
+    public boolean cancelRepair(Integer repairId, String cancelReason,
+                                Integer operatorId, HttpServletRequest request) {
         RepairRecord record = repairRecordDao.findById(repairId);
         if (record == null) {
             throw new IllegalArgumentException("报修记录不存在");
@@ -126,13 +190,33 @@ public class RepairService {
         }
 
         int result = repairRecordDao.cancelRepair(repairId, cancelReason);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 取消报修成功：repairId={}, reason={}", repairId, cancelReason);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        getUsername(request),
+                        "repair_cancel",
+                        "取消报修：单号" + repairId + "，原因：" + (cancelReason != null ? cancelReason : "无") +
+                                "，业主：" + record.getOwnerName() + "（" + record.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 评价报修
+     * ✅ 评价报修（增加日志记录）
      */
-    public boolean rateRepair(Integer repairId, Short rating, String feedback) {
+    public boolean rateRepair(Integer repairId, Short rating, String feedback,
+                              Integer operatorId, HttpServletRequest request) {
         RepairRecord record = repairRecordDao.findById(repairId);
         if (record == null) {
             throw new IllegalArgumentException("报修记录不存在");
@@ -145,15 +229,58 @@ public class RepairService {
         }
 
         int result = repairRecordDao.rateRepair(repairId, rating, feedback);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 评价报修成功：repairId={}, rating={}", repairId, rating);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        record.getOwnerId(),
+                        "repair_rate",
+                        "评价报修：单号" + repairId + "，评分：" + rating + "分" +
+                                "，业主：" + record.getOwnerName() + "（" + record.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * 删除报修
+     * ✅ 删除报修（增加日志记录）
      */
-    public boolean deleteRepair(Integer repairId) {
+    public boolean deleteRepair(Integer repairId, Integer operatorId, HttpServletRequest request) {
+        RepairRecord record = repairRecordDao.findById(repairId);
+        if (record == null) {
+            throw new IllegalArgumentException("报修记录不存在");
+        }
+
         int result = repairRecordDao.delete(repairId);
-        return result > 0;
+
+        if (result > 0) {
+            logger.info("✅ 删除报修成功：repairId={}", repairId);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        getUsername(request),
+                        "repair_delete",
+                        "删除报修：单号" + repairId + "，类型：" + getRepairTypeText(record.getRepairType()) +
+                                "，业主：" + record.getOwnerName() + "（" + record.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -165,24 +292,22 @@ public class RepairService {
 
     /**
      * 根据状态获取报修数量
-     * 🔥 修复：使用实例方法调用，而不是静态方法
      */
     public int getCountByStatus(String status) {
         try {
-            return repairRecordDao.getCountByStatus(status);  // ✅ 使用实例对象调用
+            return repairRecordDao.getCountByStatus(status);
         } catch (Exception e) {
             logger.error("获取报修数量失败：status={}", status, e);
             return 0;
         }
     }
 
-    // ==================== 🔥 新增：业主端方法 ====================
+    // ==================== 业主端方法 ====================
 
     /**
-     * 🔥 业主端：分页查询我的报修记录（最终修复版）
+     * 业主端：分页查询我的报修记录
      */
     public Map<String, Object> findByPageForOwner(int pageNum, int pageSize, String ownerId, String status) {
-        // 🔥 修复：日志参数顺序
         logger.info("业主端查询报修记录：ownerId={}, pageNum={}, pageSize={}, status={}",
                 ownerId, pageNum, pageSize, status);
 
@@ -191,10 +316,7 @@ public class RepairService {
         }
 
         try {
-            // 🔥 修复：DAO 调用参数顺序 (pageNum, pageSize, ownerId, status)
             List<RepairRecord> list = repairRecordDao.findByPageForOwner(pageNum, pageSize, ownerId, status);
-
-            // 🔥 修复：统计方法参数顺序 (ownerId, status)
             long total = repairRecordDao.countByOwner(ownerId, status);
 
             Map<String, Object> result = new HashMap<>();
@@ -213,7 +335,7 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：统计我的报修数量
+     * 业主端：统计我的报修数量
      */
     public Map<String, Object> getOwnerRepairSummary(String ownerId) {
         logger.info("统计业主报修数据：ownerId={}", ownerId);
@@ -249,7 +371,7 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：查询最近报修记录
+     * 业主端：查询最近报修记录
      */
     public List<RepairRecord> findRecentByOwner(String ownerId, int limit) {
         logger.info("查询业主最近报修：ownerId={}, limit={}", ownerId, limit);
@@ -263,9 +385,10 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：业主取消报修（带权限验证）
+     * ✅ 业主端：业主取消报修（增加日志记录）
      */
-    public boolean cancelRepairByOwner(Integer repairId, String ownerId, String cancelReason) {
+    public boolean cancelRepairByOwner(Integer repairId, String ownerId, String cancelReason,
+                                       HttpServletRequest request) {
         logger.info("业主取消报修：repairId={}, ownerId={}", repairId, ownerId);
 
         try {
@@ -289,8 +412,27 @@ public class RepairService {
             // 执行取消
             int result = repairRecordDao.cancelRepair(repairId, "业主", cancelReason);
 
-            logger.info("取消成功：repairId={}", repairId);
-            return result > 0;
+            if (result > 0) {
+                logger.info("✅ 取消成功：repairId={}", repairId);
+
+                // ✅ 记录操作日志
+                if (request != null) {
+                    Integer userId = (Integer) request.getSession().getAttribute("userId");
+                    if (userId == null) userId = 0;
+
+                    LogUtil.log(
+                            userId,
+                            ownerId,
+                            "repair_cancel",
+                            "业主取消报修：单号" + repairId + "，原因：" + (cancelReason != null ? cancelReason : "无"),
+                            LogUtil.getClientIP(request)
+                    );
+                }
+
+                return true;
+            }
+
+            return false;
 
         } catch (Exception e) {
             logger.error("业主取消报修失败", e);
@@ -299,9 +441,10 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：追加报修说明
+     * ✅ 业主端：追加报修说明（增加日志记录）
      */
-    public boolean appendDescription(Integer repairId, String ownerId, String additionalDesc) {
+    public boolean appendDescription(Integer repairId, String ownerId, String additionalDesc,
+                                     HttpServletRequest request) {
         logger.info("追加报修说明：repairId={}, ownerId={}", repairId, ownerId);
 
         try {
@@ -325,8 +468,27 @@ public class RepairService {
             // 执行追加
             int result = repairRecordDao.appendDescription(repairId, additionalDesc);
 
-            logger.info("追加成功：repairId={}", repairId);
-            return result > 0;
+            if (result > 0) {
+                logger.info("✅ 追加成功：repairId={}", repairId);
+
+                // ✅ 记录操作日志
+                if (request != null) {
+                    Integer userId = (Integer) request.getSession().getAttribute("userId");
+                    if (userId == null) userId = 0;
+
+                    LogUtil.log(
+                            userId,
+                            ownerId,
+                            "repair_append",
+                            "追加报修说明：单号" + repairId,
+                            LogUtil.getClientIP(request)
+                    );
+                }
+
+                return true;
+            }
+
+            return false;
 
         } catch (Exception e) {
             logger.error("追加报修说明失败", e);
@@ -335,7 +497,7 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：查询可评价的报修（已完成且未评价）
+     * 业主端：查询可评价的报修（已完成且未评价）
      */
     public List<RepairRecord> findRatableRepairs(String ownerId) {
         logger.info("查询可评价报修：ownerId={}", ownerId);
@@ -349,9 +511,10 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：业主评价报修（带权限验证）
+     * ✅ 业主端：业主评价报修（增加日志记录）
      */
-    public boolean rateRepairByOwner(Integer repairId, String ownerId, Short rating, String feedback) {
+    public boolean rateRepairByOwner(Integer repairId, String ownerId, Short rating, String feedback,
+                                     HttpServletRequest request) {
         logger.info("业主评价报修：repairId={}, ownerId={}, rating={}", repairId, ownerId, rating);
 
         try {
@@ -384,8 +547,27 @@ public class RepairService {
             // 执行评价
             int result = repairRecordDao.rateRepair(repairId, rating, feedback);
 
-            logger.info("评价成功：repairId={}, rating={}", repairId, rating);
-            return result > 0;
+            if (result > 0) {
+                logger.info("✅ 评价成功：repairId={}, rating={}", repairId, rating);
+
+                // ✅ 记录操作日志
+                if (request != null) {
+                    Integer userId = (Integer) request.getSession().getAttribute("userId");
+                    if (userId == null) userId = 0;
+
+                    LogUtil.log(
+                            userId,
+                            ownerId,
+                            "repair_rate",
+                            "业主评价报修：单号" + repairId + "，评分：" + rating + "分",
+                            LogUtil.getClientIP(request)
+                    );
+                }
+
+                return true;
+            }
+
+            return false;
 
         } catch (Exception e) {
             logger.error("业主评价报修失败", e);
@@ -394,7 +576,7 @@ public class RepairService {
     }
 
     /**
-     * 🔥 业主端：获取报修详情（带权限验证）
+     * 业主端：获取报修详情（带权限验证）
      */
     public RepairRecord getRepairDetailForOwner(Integer repairId, String ownerId) {
         logger.info("业主查询报修详情：repairId={}, ownerId={}", repairId, ownerId);
@@ -420,7 +602,7 @@ public class RepairService {
     }
 
     /**
-     * 🔥 获取报修统计数据（用于首页）
+     * 获取报修统计数据（用于首页）
      */
     public Map<String, Object> getRepairStatistics() {
         logger.info("获取报修统计数据");
@@ -428,16 +610,13 @@ public class RepairService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // 调用现有的 countByStatus() 方法
             Map<String, Long> statusMap = repairRecordDao.countByStatus();
 
-            // 转换为前端需要的格式
             result.put("pendingCount", statusMap.getOrDefault("pending", 0L));
             result.put("processingCount", statusMap.getOrDefault("processing", 0L));
             result.put("completedCount", statusMap.getOrDefault("completed", 0L));
             result.put("cancelledCount", statusMap.getOrDefault("cancelled", 0L));
 
-            // 计算总数
             long total = statusMap.values().stream().mapToLong(Long::longValue).sum();
             result.put("totalCount", total);
 
@@ -460,16 +639,14 @@ public class RepairService {
     }
 
     /**
-     * 🔥 查询待处理报修（用于首页，限制数量）
+     * 查询待处理报修（用于首页，限制数量）
      */
     public List<RepairRecord> findPendingRepairs(int limit) {
         logger.info("查询待处理报修：limit={}", limit);
 
         try {
-            // 调用现有的 findPendingRepairs() 方法
             List<RepairRecord> allPending = repairRecordDao.findPendingRepairs();
 
-            // 限制返回数量
             if (allPending.size() > limit) {
                 return allPending.subList(0, limit);
             }
@@ -481,6 +658,7 @@ public class RepairService {
             return new java.util.ArrayList<>();
         }
     }
+
     /**
      * 根据ID删除报修记录
      */
@@ -496,5 +674,45 @@ public class RepairService {
         }
     }
 
+    // ==================== 工具方法 ====================
 
+    /**
+     * 从请求中获取用户名
+     */
+    private String getUsername(HttpServletRequest request) {
+        if (request == null) return "unknown";
+
+        Object username = request.getSession().getAttribute("username");
+        if (username != null) {
+            return username.toString();
+        }
+
+        return "unknown";
+    }
+
+    /**
+     * 获取报修类型文本
+     */
+    private String getRepairTypeText(String repairType) {
+        if (repairType == null) return "未知";
+        switch (repairType) {
+            case "plumbing": return "水暖";
+            case "electrical": return "电路";
+            case "door_window": return "门窗";
+            case "public_facility": return "公共设施";
+            default: return "其他";
+        }
+    }
+
+    /**
+     * 获取优先级文本
+     */
+    private String getPriorityText(String priority) {
+        if (priority == null) return "普通";
+        switch (priority) {
+            case "emergency": return "紧急";
+            case "urgent": return "加急";
+            default: return "普通";
+        }
+    }
 }

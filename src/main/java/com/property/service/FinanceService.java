@@ -4,9 +4,11 @@ import com.property.dao.FinanceDao;
 import com.property.dao.PaymentRecordDao;
 import com.property.entity.FinanceStatistics;
 import com.property.entity.PaymentRecord;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
@@ -14,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * 财务管理业务逻辑层
+ * 财务管理业务逻辑层（✅ 增加日志记录）
  *
  * @author PropertyManagementSystem
  * @version 1.0
@@ -23,6 +25,7 @@ public class FinanceService {
     private static final Logger logger = LoggerFactory.getLogger(FinanceService.class);
     private final FinanceDao financeDao = new FinanceDao();
     private final PaymentRecordDao paymentRecordDao = new PaymentRecordDao();
+
     /**
      * 查询欠费业主列表(分页)
      * 🔧 修复:添加关键词搜索参数
@@ -112,9 +115,21 @@ public class FinanceService {
     }
 
     /**
-     * 生成催缴通知
+     * 生成催缴通知（支持不传 request）
      */
     public boolean generatePaymentReminder(String ownerId, int publisherId) {
+        return generatePaymentReminder(ownerId, publisherId, null);
+    }
+
+    /**
+     * ✅ 生成催缴通知（增加日志记录）
+     *
+     * @param ownerId 业主ID
+     * @param publisherId 发布者ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean generatePaymentReminder(String ownerId, int publisherId, HttpServletRequest request) {
         logger.info("========================================");
         logger.info("【Service】生成催缴通知");
         logger.info("ownerId={}, publisherId={}", ownerId, publisherId);
@@ -130,6 +145,26 @@ public class FinanceService {
 
             if (success) {
                 logger.info("✅ 生成催缴通知成功");
+
+                // ✅ 记录操作日志
+                if (request != null) {
+                    LogUtil.log(
+                            publisherId,
+                            "admin_" + publisherId,
+                            "finance_reminder",
+                            "生成催缴通知：业主ID=" + ownerId,
+                            LogUtil.getClientIP(request)
+                    );
+                } else {
+                    // 如果没有 request，使用默认 IP
+                    LogUtil.log(
+                            publisherId,
+                            "admin_" + publisherId,
+                            "finance_reminder",
+                            "生成催缴通知：业主ID=" + ownerId,
+                            "0.0.0.0"
+                    );
+                }
             } else {
                 logger.warn("⚠️ 生成催缴通知失败");
             }
@@ -416,6 +451,7 @@ public class FinanceService {
             return defaultYears;
         }
     }
+
     /**
      * 📈 获取本月收入统计
      */
@@ -538,7 +574,7 @@ public class FinanceService {
         return activities;
     }
 
-// ==================== 辅助方法 ====================
+    // ==================== 辅助方法 ====================
 
     /**
      * 格式化时间显示（相对时间）
@@ -606,5 +642,4 @@ public class FinanceService {
         cal.set(Calendar.SECOND, 59);
         return cal.getTime();
     }
-
 }

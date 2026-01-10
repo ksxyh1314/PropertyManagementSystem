@@ -1,53 +1,86 @@
 package com.property.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.io.Serializable;
 import java.util.Date;
 
 /**
  * 操作日志实体类
- * 对应数据库表：operation_logs
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class OperationLog implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class OperationLog {
+    private Integer logId;           // 日志ID
+    private Integer userId;          // 用户ID
+    private String username;         // 用户名
+    private String operationType;    // 操作类型
+    private String operationDesc;    // 操作描述
+    private String ipAddress;        // IP地址
+    private Date operationTime;      // 操作时间
 
-    /**
-     * 日志ID（自增主键）
-     */
-    private Long logId;
+    // Getters and Setters
+    public Integer getLogId() {
+        return logId;
+    }
 
-    /**
-     * 用户ID
-     */
-    private Integer userId;
+    public void setLogId(Integer logId) {
+        this.logId = logId;
+    }
 
-    /**
-     * 用户名
-     */
-    private String username;
+    public Integer getUserId() {
+        return userId;
+    }
 
-    /**
-     * 操作类型
-     */
-    private String operationType;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
 
-    /**
-     * 操作描述
-     */
-    private String operationDesc;
+    public String getUsername() {
+        return username;
+    }
 
-    /**
-     * IP地址
-     */
-    private String ipAddress;
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-    /**
-     * 操作时间
-     */
-    private Date operationTime;
+    public String getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(String operationType) {
+        this.operationType = operationType;
+    }
+
+    public String getOperationDesc() {
+        return operationDesc;
+    }
+
+    public void setOperationDesc(String operationDesc) {
+        this.operationDesc = operationDesc;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public Date getOperationTime() {
+        return operationTime;
+    }
+
+    public void setOperationTime(Date operationTime) {
+        this.operationTime = operationTime;
+    }
+
+    @Override
+    public String toString() {
+        return "OperationLog{" +
+                "logId=" + logId +
+                ", userId=" + userId +
+                ", username='" + username + '\'' +
+                ", operationType='" + operationType + '\'' +
+                ", operationDesc='" + operationDesc + '\'' +
+                ", ipAddress='" + ipAddress + '\'' +
+                ", operationTime=" + operationTime +
+                '}';
+    }
 }

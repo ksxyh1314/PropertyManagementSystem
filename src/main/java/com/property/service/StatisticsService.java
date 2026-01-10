@@ -147,22 +147,21 @@ public class StatisticsService {
             rs12.close();
             pstmt12.close();
 
-            // 本月收缴率
-            String sql13 = "SELECT " +
-                    "    CAST(COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) * 100.0 / " +
-                    "    NULLIF(COUNT(*), 0) AS DECIMAL(5,2)) as paymentRate " +
-                    "FROM payment_records " +
-                    "WHERE YEAR(due_date) = YEAR(GETDATE()) " +
-                    "AND MONTH(due_date) = MONTH(GETDATE())";
+            // 🔥 本月收缴率（使用视图 view_monthly_payment_rate）
+            String sql13 = "select payment_rate from view_monthly_payment_rate";
             PreparedStatement pstmt13 = conn.prepareStatement(sql13);
             ResultSet rs13 = pstmt13.executeQuery();
             if (rs13.next()) {
-                stats.put("paymentRate", rs13.getDouble("paymentRate"));
+                double rate = rs13.getDouble("payment_rate");
+                stats.put("paymentRate", rate);  // 直接返回百分比（0-100）
+                System.out.println("📊 本月收缴率（来自视图）: " + rate + "%");
             } else {
                 stats.put("paymentRate", 0.0);
             }
             rs13.close();
             pstmt13.close();
+
+
 
             // ========== 🔥 新增：已取消报修数 ==========
             String sql14 = "SELECT COUNT(*) as count FROM repair_records WHERE repair_status = 'cancelled'";

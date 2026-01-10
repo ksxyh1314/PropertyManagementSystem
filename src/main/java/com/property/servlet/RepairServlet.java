@@ -14,6 +14,11 @@ import java.util.Map;
 
 /**
  * 报修管理Servlet (管理员端核心逻辑)
+ *
+ * ✅ 日志记录规则：
+ * - 提交报修：触发器 trg_after_repair_submit 自动记录（不需要传参）
+ * - 完成报修：触发器 trg_after_repair_complete 自动记录（不需要传参）
+ * - 其他操作：Service 层记录（需要传 operatorId 和 request）
  */
 @WebServlet("/admin/repair")
 public class RepairServlet extends BaseServlet {
@@ -41,7 +46,7 @@ public class RepairServlet extends BaseServlet {
             writeError(resp, "页码必须大于0");
             return;
         }
-        if (pageSize > MAX_PAGE_SIZE) pageSize = MAX_PAGE_SIZE; // 自动修正最大值
+        if (pageSize > MAX_PAGE_SIZE) pageSize = MAX_PAGE_SIZE;
 
         try {
             Map<String, Object> result = repairService.findByPage(pageNum, pageSize, keyword, status);
@@ -88,7 +93,7 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 3. 提交报修 (管理员代提交)
+     * ✅ 3. 提交报修 (管理员代提交) - 不需要传日志参数，触发器会自动记录
      */
     public void submit(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) return;
@@ -122,10 +127,12 @@ public class RepairServlet extends BaseServlet {
         record.setRepairType(repairType.trim());
         record.setDescription(description.trim());
         record.setPriority(priority);
-        record.setRepairStatus("pending"); // 默认为待处理
+        record.setRepairStatus("pending");
 
         try {
+            // ✅ 不需要传日志参数，触发器 trg_after_repair_submit 会自动记录
             Integer repairId = repairService.submitRepair(record);
+
             if (repairId != null) {
                 writeSuccess(resp, "提交报修成功", repairId);
             } else {
@@ -138,11 +145,12 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 4. 受理报修 (管理员专属)
+     * ✅ 4. 受理报修 (管理员专属) - 需要记录日志
      */
     public void accept(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (!checkRole(req, resp, "admin")) return; // 仅管理员
+        if (!checkRole(req, resp, "admin")) return;
 
+        User currentUser = getCurrentUser(req);
         Integer repairId = getIntParameter(req, "repairId");
         String handler = getStringParameter(req, "handler");
         String handlerPhone = getStringParameter(req, "handlerPhone");
@@ -158,7 +166,6 @@ public class RepairServlet extends BaseServlet {
         }
 
         try {
-            // 检查状态：只有 pending 状态才能受理
             RepairRecord record = repairService.findById(repairId);
             if (record == null) {
                 writeError(resp, "记录不存在");
@@ -169,7 +176,15 @@ public class RepairServlet extends BaseServlet {
                 return;
             }
 
-            boolean success = repairService.acceptRepair(repairId, handler.trim(), handlerPhone.trim());
+            // ✅ 传递操作员信息和请求对象，用于记录日志
+            boolean success = repairService.acceptRepair(
+                    repairId,
+                    handler.trim(),
+                    handlerPhone.trim(),
+                    currentUser.getUserId(),  // ✅ 操作员ID
+                    req                       // ✅ 请求对象（用于获取IP）
+            );
+
             if (success) {
                 writeSuccess(resp, "受理报修成功");
             } else {
@@ -182,7 +197,7 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 5. 完成报修 (管理员专属)
+     * ✅ 5. 完成报修 (管理员专属) - 不需要传日志参数，触发器会自动记录
      */
     public void complete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) return;
@@ -201,14 +216,15 @@ public class RepairServlet extends BaseServlet {
         }
 
         try {
-            // 检查状态：只有 processing 状态才能完成
             RepairRecord record = repairService.findById(repairId);
             if (record == null || !"processing".equals(record.getRepairStatus())) {
                 writeError(resp, "只有【处理中】的工单才能点击完成");
                 return;
             }
 
+            // ✅ 不需要传日志参数，触发器 trg_after_repair_complete 会自动记录
             boolean success = repairService.completeRepair(repairId, repairResult.trim());
+
             if (success) {
                 writeSuccess(resp, "完成报修成功");
             } else {
@@ -221,9 +237,7 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 6. 取消报修 (核心业务逻辑升级)
-     * - 业主：只能取消 Pending
-     * - 管理员：可以取消 Pending 和 Processing (驳回)
+     * ✅ 6. 取消报修 - 需要记录日志
      */
     public void cancel(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) return;
@@ -244,9 +258,8 @@ public class RepairServlet extends BaseServlet {
                 return;
             }
 
-            // --- 权限与状态检查 ---
+            // 权限与状态检查
             if ("owner".equals(currentUser.getUserRole())) {
-                // 🛑 业主逻辑
                 if (!currentUser.getUsername().equals(record.getOwnerId())) {
                     writeError(resp, "无权操作他人的工单");
                     return;
@@ -256,7 +269,6 @@ public class RepairServlet extends BaseServlet {
                     return;
                 }
             } else if ("admin".equals(currentUser.getUserRole())) {
-                // 🛑 管理员逻辑 (权限更大)
                 if ("completed".equals(record.getRepairStatus())) {
                     writeError(resp, "已完成的工单无法取消/驳回");
                     return;
@@ -265,12 +277,17 @@ public class RepairServlet extends BaseServlet {
                     writeError(resp, "该工单已经是取消状态");
                     return;
                 }
-                // 管理员操作时，自动添加前缀，体现业务含义
                 cancelReason = "[管理员驳回] " + cancelReason;
             }
 
-            // 执行取消
-            boolean success = repairService.cancelRepair(repairId, cancelReason.trim());
+            // ✅ 传递操作员信息和请求对象，用于记录日志
+            boolean success = repairService.cancelRepair(
+                    repairId,
+                    cancelReason.trim(),
+                    currentUser.getUserId(),  // ✅ 操作员ID
+                    req                       // ✅ 请求对象
+            );
+
             if (success) {
                 writeSuccess(resp, "操作成功");
             } else {
@@ -283,14 +300,14 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 7. 删除报修记录 (安全升级)
-     * - 仅允许删除 "已取消" 或 "已完成" 的记录
-     * - 防止误删 "处理中" 的记录
+     * ✅ 7. 删除报修记录 - 需要记录日志
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) return;
 
+        User currentUser = getCurrentUser(req);
         Integer repairId = getIntParameter(req, "repairId");
+
         if (repairId == null) {
             writeError(resp, "ID不能为空");
             return;
@@ -303,20 +320,24 @@ public class RepairServlet extends BaseServlet {
                 return;
             }
 
-            // 🛑 安全检查：禁止删除正在进行的任务
+            // 安全检查
             if ("processing".equals(record.getRepairStatus())) {
                 writeError(resp, "该工单正在维修中，禁止删除！请先取消或完成后再删除。");
                 return;
             }
 
-            // 🛑 安全检查：禁止删除待处理的任务（防止误操作导致业主以为提交了但没人理）
-            // 这一步看业务需求，通常建议只能删除 Cancelled 或 Completed
             if ("pending".equals(record.getRepairStatus())) {
                 writeError(resp, "待处理的工单建议先【取消】后再删除，以保留操作痕迹。");
                 return;
             }
 
-            boolean success = repairService.deleteRepair(repairId);
+            // ✅ 传递操作员信息和请求对象，用于记录日志
+            boolean success = repairService.deleteRepair(
+                    repairId,
+                    currentUser.getUserId(),  // ✅ 操作员ID
+                    req                       // ✅ 请求对象
+            );
+
             if (success) {
                 writeSuccess(resp, "删除成功");
             } else {
@@ -329,7 +350,7 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 8. 评价报修 (通常只有业主能评价，管理员只能查看)
+     * ✅ 8. 评价报修 - 需要记录日志
      */
     public void rate(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) return;
@@ -344,6 +365,11 @@ public class RepairServlet extends BaseServlet {
             return;
         }
 
+        if (rating < MIN_RATING || rating > MAX_RATING) {
+            writeError(resp, "评分必须在" + MIN_RATING + "-" + MAX_RATING + "之间");
+            return;
+        }
+
         try {
             RepairRecord record = repairService.findById(repairId);
             if (record == null) {
@@ -351,7 +377,7 @@ public class RepairServlet extends BaseServlet {
                 return;
             }
 
-            // 🛑 业务限制：管理员不能给自己刷好评
+            // 管理员不能评价
             if ("admin".equals(currentUser.getUserRole())) {
                 writeError(resp, "管理员无法评价工单，请由业主进行评价");
                 return;
@@ -368,7 +394,20 @@ public class RepairServlet extends BaseServlet {
                 return;
             }
 
-            boolean success = repairService.rateRepair(repairId, rating.shortValue(), feedback);
+            if (record.getSatisfactionRating() != null) {
+                writeError(resp, "该工单已经评价过了");
+                return;
+            }
+
+            // ✅ 传递操作员信息和请求对象，用于记录日志
+            boolean success = repairService.rateRepair(
+                    repairId,
+                    rating.shortValue(),
+                    feedback,
+                    currentUser.getUserId(),  // ✅ 操作员ID
+                    req                       // ✅ 请求对象
+            );
+
             if (success) {
                 writeSuccess(resp, "评价成功");
             } else {
@@ -380,21 +419,8 @@ public class RepairServlet extends BaseServlet {
         }
     }
 
-    // ==================== 辅助方法 ====================
-
-    public void detail(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        findById(req, resp);
-    }
-
-    private boolean isValidPriority(String priority) {
-        return "normal".equals(priority) || "urgent".equals(priority) || "emergency".equals(priority);
-    }
-
-    private boolean isValidPhone(String phone) {
-        return phone != null && phone.matches("^1[3-9]\\d{9}$");
-    }
     /**
-     * 🔥 9. 查询待处理报修（用于首页统计）
+     * 9. 查询待处理报修（用于首页统计）
      */
     public void findPending(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) return;
@@ -412,7 +438,7 @@ public class RepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 10. 按状态统计报修数量（用于首页卡片）
+     * 10. 按状态统计报修数量（用于首页卡片）
      */
     public void countByStatus(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) return;
@@ -426,4 +452,17 @@ public class RepairServlet extends BaseServlet {
         }
     }
 
+    // ==================== 辅助方法 ====================
+
+    public void detail(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        findById(req, resp);
+    }
+
+    private boolean isValidPriority(String priority) {
+        return "normal".equals(priority) || "urgent".equals(priority) || "emergency".equals(priority);
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone != null && phone.matches("^1[3-9]\\d{9}$");
+    }
 }

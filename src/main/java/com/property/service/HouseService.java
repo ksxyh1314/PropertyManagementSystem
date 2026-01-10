@@ -1,28 +1,30 @@
 package com.property.service;
 
 import com.property.dao.HouseDao;
-import com.property.dao.PaymentRecordDao; // ✅ Added
-import com.property.dao.RepairRecordDao;  // ✅ Added
+import com.property.dao.OwnerDao;
+import com.property.dao.PaymentRecordDao;
+import com.property.dao.RepairRecordDao;
 import com.property.entity.House;
+import com.property.entity.Owner;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 房屋服务类
+ * 房屋服务类（✅ 增加日志记录 + 出售/出租功能）
  */
 public class HouseService {
     private static final Logger logger = LoggerFactory.getLogger(HouseService.class);
 
     private HouseDao houseDao = new HouseDao();
-
-    // ✅ 新增：引入其他DAO用于检查关联数据
-    // 请确保这两个 DAO 类中已经添加了 countByHouseId(String houseId) 方法
-    private PaymentRecordDao PaymentRecordDao = new PaymentRecordDao();
+    private OwnerDao ownerDao = new OwnerDao();  // ✅ 添加 OwnerDao
+    private PaymentRecordDao paymentRecordDao = new PaymentRecordDao();
     private RepairRecordDao repairRecordDao = new RepairRecordDao();
 
     // ==================== 🔥 新增：业主端专用方法 ====================
@@ -47,6 +49,110 @@ public class HouseService {
         } catch (Exception e) {
             logger.error("❌ Service 查询业主房屋失败", e);
             throw new RuntimeException("查询房屋失败：" + e.getMessage(), e);
+        }
+    }
+
+    // ==================== 🔥 新增：出售/出租功能 ====================
+
+    /**
+     * ✅ 记录房屋出售日志
+     */
+    public void logHouseSale(String houseId, String ownerId, Integer operatorId, HttpServletRequest request) {
+        try {
+            // 获取房屋和业主信息
+            House house = houseDao.findById(houseId);
+            Owner owner = ownerDao.findById(ownerId);
+
+            String logContent = String.format(
+                    "房屋出售：%s（%s栋%s单元%s层），业主：%s（%s）",
+                    houseId,
+                    house != null ? house.getBuildingNo() : "?",
+                    house != null ? house.getUnitNo() : "?",
+                    house != null ? house.getFloor() : "?",
+                    owner != null ? owner.getOwnerName() : "未知",
+                    ownerId
+            );
+
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_sale",
+                        logContent,
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            logger.info("✅ 记录房屋出售日志：{}", logContent);
+        } catch (Exception e) {
+            // 日志记录失败不影响主流程
+            logger.error("❌ 记录房屋出售日志失败", e);
+        }
+    }
+
+    /**
+     * ✅ 记录取消出售日志
+     */
+    public void logCancelSale(String houseId, String oldOwnerId, Integer operatorId, HttpServletRequest request) {
+        try {
+            House house = houseDao.findById(houseId);
+
+            String logContent = String.format(
+                    "取消出售：%s（%s栋%s单元%s层），原业主：%s",
+                    houseId,
+                    house != null ? house.getBuildingNo() : "?",
+                    house != null ? house.getUnitNo() : "?",
+                    house != null ? house.getFloor() : "?",
+                    oldOwnerId != null ? oldOwnerId : "无"
+            );
+
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_cancel_sale",
+                        logContent,
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            logger.info("✅ 记录取消出售日志：{}", logContent);
+        } catch (Exception e) {
+            logger.error("❌ 记录取消出售日志失败", e);
+        }
+    }
+
+    /**
+     * ✅ 记录房屋出租日志
+     */
+    public void logHouseLease(String houseId, String ownerId, Integer operatorId, HttpServletRequest request) {
+        try {
+            House house = houseDao.findById(houseId);
+            Owner owner = ownerDao.findById(ownerId);
+
+            String logContent = String.format(
+                    "房屋出租：%s（%s栋%s单元%s层），租户：%s（%s）",
+                    houseId,
+                    house != null ? house.getBuildingNo() : "?",
+                    house != null ? house.getUnitNo() : "?",
+                    house != null ? house.getFloor() : "?",
+                    owner != null ? owner.getOwnerName() : "未知",
+                    ownerId
+            );
+
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_lease",
+                        logContent,
+                        LogUtil.getClientIP(request)
+                );
+            }
+
+            logger.info("✅ 记录房屋出租日志：{}", logContent);
+        } catch (Exception e) {
+            logger.error("❌ 记录房屋出租日志失败", e);
         }
     }
 
@@ -170,9 +276,21 @@ public class HouseService {
     }
 
     /**
-     * 添加房屋
+     * 添加房屋（支持不传 request）
      */
     public boolean addHouse(House house) {
+        return addHouse(house, null, null);
+    }
+
+    /**
+     * ✅ 添加房屋（增加日志记录）
+     *
+     * @param house 房屋信息
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean addHouse(House house, Integer operatorId, HttpServletRequest request) {
         // 参数验证
         validateHouse(house);
 
@@ -192,15 +310,40 @@ public class HouseService {
         int rows = houseDao.insert(house);
         if (rows > 0) {
             logger.info("添加房屋成功：{}", house.getHouseId());
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_add",
+                        "添加房屋：" + house.getHouseId() + "（" + house.getBuildingNo() +
+                                "栋" + house.getUnitNo() + "单元" + house.getFloor() + "层）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * 更新房屋信息
+     * 更新房屋信息（支持不传 request）
      */
     public boolean updateHouse(House house) {
+        return updateHouse(house, null, null);
+    }
+
+    /**
+     * ✅ 更新房屋信息（增加日志记录）
+     *
+     * @param house 房屋信息
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean updateHouse(House house, Integer operatorId, HttpServletRequest request) {
         if (house.getHouseId() == null || house.getHouseId().trim().isEmpty()) {
             throw new IllegalArgumentException("房屋ID不能为空");
         }
@@ -217,16 +360,40 @@ public class HouseService {
         int rows = houseDao.update(house);
         if (rows > 0) {
             logger.info("更新房屋成功：{}", house.getHouseId());
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_update",
+                        "更新房屋：" + house.getHouseId() + "（" + house.getBuildingNo() +
+                                "栋" + house.getUnitNo() + "单元" + house.getFloor() + "层）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * ✅ 删除房屋 (已修复逻辑)
-     * 增加了对 业主、缴费记录、报修记录 的前置检查
+     * 删除房屋（支持不传 request）
      */
     public boolean deleteHouse(String houseId) {
+        return deleteHouse(houseId, null, null);
+    }
+
+    /**
+     * ✅ 删除房屋（增加日志记录）
+     *
+     * @param houseId 房屋ID
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean deleteHouse(String houseId, Integer operatorId, HttpServletRequest request) {
         if (houseId == null || houseId.trim().isEmpty()) {
             throw new IllegalArgumentException("房屋ID不能为空");
         }
@@ -244,21 +411,17 @@ public class HouseService {
 
         // 3. ✅ 检查是否有历史缴费记录
         try {
-            // 注意：PaymentRecordDao 需要实现 countByHouseId 方法
-            int paymentCount = PaymentRecordDao.countByHouseId(houseId);
+            int paymentCount = paymentRecordDao.countByHouseId(houseId);
             if (paymentCount > 0) {
                 throw new IllegalArgumentException("该房屋存在 " + paymentCount + " 条历史缴费记录，禁止删除！");
             }
         } catch (Exception e) {
-            // 如果是 IllegalArgumentException 说明是我们自己抛出的，直接向上抛
             if (e instanceof IllegalArgumentException) throw e;
-            // 其他异常（如数据库错误）记录日志
             logger.error("检查缴费记录失败", e);
         }
 
         // 4. ✅ 检查是否有报修记录
         try {
-            // 注意：RepairRecordDao 需要实现 countByHouseId 方法
             int repairCount = repairRecordDao.countByHouseId(houseId);
             if (repairCount > 0) {
                 throw new IllegalArgumentException("该房屋存在 " + repairCount + " 条报修记录，禁止删除！");
@@ -272,15 +435,41 @@ public class HouseService {
         int rows = houseDao.delete(houseId);
         if (rows > 0) {
             logger.info("删除房屋成功：{}", houseId);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_delete",
+                        "删除房屋：" + houseId + "（" + house.getBuildingNo() +
+                                "栋" + house.getUnitNo() + "单元" + house.getFloor() + "层）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * 分配业主
+     * 分配业主（支持不传 request）
      */
     public boolean assignOwner(String houseId, String ownerId) {
+        return assignOwner(houseId, ownerId, null, null);
+    }
+
+    /**
+     * ✅ 分配业主（增加日志记录）
+     *
+     * @param houseId 房屋ID
+     * @param ownerId 业主ID
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean assignOwner(String houseId, String ownerId, Integer operatorId, HttpServletRequest request) {
         if (houseId == null || houseId.trim().isEmpty()) {
             throw new IllegalArgumentException("房屋ID不能为空");
         }
@@ -291,6 +480,18 @@ public class HouseService {
         int rows = houseDao.assignOwner(houseId, ownerId);
         if (rows > 0) {
             logger.info("分配业主成功：房屋={}, 业主={}", houseId, ownerId);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "house_assign",
+                        "分配业主：房屋" + houseId + " → 业主" + ownerId,
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
@@ -311,6 +512,20 @@ public class HouseService {
             throw new IllegalArgumentException("房屋ID列表不能为空");
         }
         return houseDao.findByIds(ids);
+    }
+
+    /**
+     * 获取楼栋列表
+     */
+    public List<Map<String, Object>> listBuildings() throws Exception {
+        return houseDao.listBuildings();
+    }
+
+    /**
+     * 统计已入住房屋数量
+     */
+    public int countOccupied(String buildingId) throws Exception {
+        return houseDao.countOccupied(buildingId);
     }
 
     /**
@@ -356,13 +571,5 @@ public class HouseService {
         if (!house.getFloor().matches("^\\d{2}$")) {
             throw new IllegalArgumentException("楼层必须为2位数字");
         }
-    }
-
-    public List<Map<String, Object>> listBuildings() throws Exception {
-        return houseDao.listBuildings();
-    }
-
-    public int countOccupied(String buildingId) throws Exception {
-        return houseDao.countOccupied(buildingId);
     }
 }

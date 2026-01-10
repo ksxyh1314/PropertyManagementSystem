@@ -18,13 +18,19 @@ import java.util.Map;
 
 /**
  * 业主端 - 报修管理
- * 功能：列表查询、提交、详情、取消、评价
+ * 功能：列表查询、提交、详情、取消、评价、删除
+ *
+ * ✅ 日志记录规则：
+ * - 提交报修：触发器 trg_after_repair_submit 自动记录（不需要传参）
+ * - 取消报修：Service 层记录（需要传 request）
+ * - 评价报修：Service 层记录（需要传 request）
+ * - 删除报修：Service 层记录（需要传 request）
  */
 @WebServlet("/owner/repair")
 public class OwnerRepairServlet extends BaseServlet {
     private static final Logger logger = LoggerFactory.getLogger(OwnerRepairServlet.class);
     private final RepairService repairService = new RepairService();
-    private final HouseService houseService = new HouseService(); // 🔥 新增
+    private final HouseService houseService = new HouseService();
 
     // 常量定义
     private static final int MAX_DESCRIPTION_LENGTH = 500;
@@ -33,7 +39,7 @@ public class OwnerRepairServlet extends BaseServlet {
     private static final int MAX_RATING = 5;
 
     /**
-     * 🔥 新增：查询当前业主的房屋列表（用于报修时选择）
+     * 查询当前业主的房屋列表（用于报修时选择）
      */
     public void myHouses(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -56,7 +62,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 1. 查询我的报修列表（最终修复版）
+     * 1. 查询我的报修列表
      */
     public void list(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -71,9 +77,8 @@ public class OwnerRepairServlet extends BaseServlet {
                 ownerId, repairStatus, pageNum, pageSize);
 
         try {
-            // 🔥🔥🔥 修复：参数顺序改为 (pageNum, pageSize, ownerId, repairStatus)
             Map<String, Object> result = repairService.findByPageForOwner(
-                    pageNum, pageSize, ownerId, repairStatus  // ✅ 正确顺序
+                    pageNum, pageSize, ownerId, repairStatus
             );
 
             logger.info("✅ Servlet: 查询成功，total={}, listSize={}",
@@ -88,7 +93,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 2. 提交报修（修复版：自动识别业主房屋）
+     * ✅ 2. 提交报修（不需要传日志参数，触发器会自动记录）
      */
     public void submit(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -97,9 +102,9 @@ public class OwnerRepairServlet extends BaseServlet {
         String houseId = getStringParameter(req, "houseId");
         String repairType = getStringParameter(req, "repairType");
         String description = getStringParameter(req, "description");
-        String priority = getStringParameter(req, "priority", "normal"); // 默认为普通
+        String priority = getStringParameter(req, "priority", "normal");
 
-        // --- 参数校验 ---
+        // 参数校验
         if (houseId == null || repairType == null || description == null) {
             writeError(resp, "请填写完整信息（房屋、类型、描述）");
             return;
@@ -116,7 +121,7 @@ public class OwnerRepairServlet extends BaseServlet {
         try {
             String ownerId = currentUser.getUsername();
 
-            // 🔥🔥🔥 关键安全检查：验证房屋是否属于当前业主
+            // 安全检查：验证房屋是否属于当前业主
             House house = houseService.findById(houseId);
             if (house == null) {
                 writeError(resp, "房屋不存在");
@@ -130,13 +135,14 @@ public class OwnerRepairServlet extends BaseServlet {
 
             // 构建报修记录
             RepairRecord record = new RepairRecord();
-            record.setOwnerId(ownerId); // 绑定当前用户
+            record.setOwnerId(ownerId);
             record.setHouseId(houseId);
             record.setRepairType(repairType);
             record.setDescription(description);
             record.setPriority(priority);
-            record.setRepairStatus("pending"); // 初始状态
+            record.setRepairStatus("pending");
 
+            // ✅ 不需要传日志参数，触发器 trg_after_repair_submit 会自动记录
             Integer repairId = repairService.submitRepair(record);
 
             if (repairId != null && repairId > 0) {
@@ -151,7 +157,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 3. 查询报修详情
+     * 3. 查询报修详情
      */
     public void detail(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -164,7 +170,6 @@ public class OwnerRepairServlet extends BaseServlet {
         }
 
         try {
-            // 权限检查提取为通用方法
             RepairRecord record = checkOwnerAuth(repairId, currentUser.getUsername());
             if (record == null) {
                 writeError(resp, 403, "报修记录不存在或无权访问");
@@ -179,8 +184,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 4. 取消报修
-     * 只有 "pending" (待处理) 状态的可以取消
+     * ✅ 4. 取消报修（需要记录日志）
      */
     public void cancel(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -212,8 +216,14 @@ public class OwnerRepairServlet extends BaseServlet {
                 return;
             }
 
-            // 3. 执行取消
-            boolean success = repairService.cancelRepair(repairId, cancelReason);
+            // ✅ 3. 执行取消（传递 request 用于记录日志）
+            boolean success = repairService.cancelRepairByOwner(
+                    repairId,
+                    currentUser.getUsername(),
+                    cancelReason.trim(),
+                    req  // ✅ 传递请求对象，用于记录日志
+            );
+
             if (success) {
                 writeSuccess(resp, "取消成功");
             } else {
@@ -226,8 +236,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 5. 评价报修
-     * 只有 "completed" (已完成) 状态的可以评价
+     * ✅ 5. 评价报修（需要记录日志）
      */
     public void rate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -265,8 +274,21 @@ public class OwnerRepairServlet extends BaseServlet {
                 return;
             }
 
-            // 3. 执行评价
-            boolean success = repairService.rateRepair(repairId, rating.shortValue(), feedback);
+            // 3. 检查是否已评价
+            if (record.getSatisfactionRating() != null) {
+                writeError(resp, "该工单已经评价过了");
+                return;
+            }
+
+            // ✅ 4. 执行评价（传递 request 用于记录日志）
+            boolean success = repairService.rateRepairByOwner(
+                    repairId,
+                    currentUser.getUsername(),
+                    rating.shortValue(),
+                    feedback,
+                    req  // ✅ 传递请求对象，用于记录日志
+            );
+
             if (success) {
                 writeSuccess(resp, "评价提交成功");
             } else {
@@ -279,7 +301,7 @@ public class OwnerRepairServlet extends BaseServlet {
     }
 
     /**
-     * 🔥 6. 首页查询最近报修 (Limit 5)
+     * 6. 首页查询最近报修
      */
     public void recent(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -297,34 +319,8 @@ public class OwnerRepairServlet extends BaseServlet {
         }
     }
 
-    // ==================== 私有辅助方法 ====================
-
     /**
-     * 核心安全检查：验证报修单是否存在，且属于当前登录业主
-     * @return 如果验证通过返回 Record 对象，否则返回 null
-     */
-    private RepairRecord checkOwnerAuth(Integer repairId, String currentOwnerId) {
-        RepairRecord record = repairService.findById(repairId);
-        if (record == null) {
-            return null;
-        }
-        // 关键：比较数据库中的 ownerId 和 Session 中的 username
-        if (!currentOwnerId.equals(record.getOwnerId())) {
-            logger.warn("越权访问警告：用户 {} 尝试访问报修单 {}", currentOwnerId, repairId);
-            return null;
-        }
-        return record;
-    }
-
-    /**
-     * 验证优先级参数
-     */
-    private boolean isValidPriority(String priority) {
-        return "normal".equals(priority) || "urgent".equals(priority) || "emergency".equals(priority);
-    }
-    /**
-     * 🔥 6. 删除报修记录（新增）
-     * 只有 "cancelled" (已取消) 状态的可以删除
+     * ✅ 7. 删除报修记录（需要记录日志）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User currentUser = checkOwnerLoginAndGetUser(req, resp);
@@ -350,8 +346,17 @@ public class OwnerRepairServlet extends BaseServlet {
                 return;
             }
 
-            // 3. 执行删除
-            boolean success = repairService.deleteById(repairId);
+            // ✅ 3. 执行删除（需要记录日志）
+            // 注意：业主端删除需要使用带日志记录的方法
+            Integer userId = currentUser.getUserId();
+            if (userId == null) userId = 0;
+
+            boolean success = repairService.deleteRepair(
+                    repairId,
+                    userId,  // ✅ 操作员ID
+                    req      // ✅ 请求对象
+            );
+
             if (success) {
                 logger.info("业主 {} 删除了报修记录 {}", currentUser.getUsername(), repairId);
                 writeSuccess(resp, "删除成功");
@@ -364,4 +369,118 @@ public class OwnerRepairServlet extends BaseServlet {
         }
     }
 
+    /**
+     * ✅ 8. 追加报修说明（需要记录日志）
+     */
+    public void appendDescription(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        User currentUser = checkOwnerLoginAndGetUser(req, resp);
+        if (currentUser == null) return;
+
+        Integer repairId = getIntParameter(req, "repairId");
+        String additionalDesc = getStringParameter(req, "additionalDesc");
+
+        if (repairId == null) {
+            writeError(resp, "报修ID不能为空");
+            return;
+        }
+        if (additionalDesc == null || additionalDesc.trim().isEmpty()) {
+            writeError(resp, "请输入追加说明");
+            return;
+        }
+        if (additionalDesc.length() > MAX_DESCRIPTION_LENGTH) {
+            writeError(resp, "追加说明不能超过" + MAX_DESCRIPTION_LENGTH + "字");
+            return;
+        }
+
+        try {
+            // 1. 权限检查
+            RepairRecord record = checkOwnerAuth(repairId, currentUser.getUsername());
+            if (record == null) {
+                writeError(resp, 403, "无权操作此记录");
+                return;
+            }
+
+            // 2. 状态检查
+            String status = record.getRepairStatus();
+            if (!"pending".equals(status) && !"processing".equals(status)) {
+                writeError(resp, "该报修已完成或取消，无法追加说明");
+                return;
+            }
+
+            // ✅ 3. 执行追加（传递 request 用于记录日志）
+            boolean success = repairService.appendDescription(
+                    repairId,
+                    currentUser.getUsername(),
+                    additionalDesc.trim(),
+                    req  // ✅ 传递请求对象，用于记录日志
+            );
+
+            if (success) {
+                writeSuccess(resp, "追加说明成功");
+            } else {
+                writeError(resp, "追加说明失败");
+            }
+        } catch (Exception e) {
+            logger.error("追加报修说明失败", e);
+            writeError(resp, "操作失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 9. 查询可评价的报修
+     */
+    public void ratable(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        User currentUser = checkOwnerLoginAndGetUser(req, resp);
+        if (currentUser == null) return;
+
+        try {
+            String ownerId = currentUser.getUsername();
+            List<RepairRecord> list = repairService.findRatableRepairs(ownerId);
+            writeSuccess(resp, "查询成功", list);
+        } catch (Exception e) {
+            logger.error("查询可评价报修失败", e);
+            writeError(resp, "查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 10. 统计我的报修数量
+     */
+    public void summary(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        User currentUser = checkOwnerLoginAndGetUser(req, resp);
+        if (currentUser == null) return;
+
+        try {
+            String ownerId = currentUser.getUsername();
+            Map<String, Object> summary = repairService.getOwnerRepairSummary(ownerId);
+            writeSuccess(resp, "统计成功", summary);
+        } catch (Exception e) {
+            logger.error("统计报修数量失败", e);
+            writeError(resp, "统计失败：" + e.getMessage());
+        }
+    }
+
+    // ==================== 私有辅助方法 ====================
+
+    /**
+     * 核心安全检查：验证报修单是否存在，且属于当前登录业主
+     */
+    private RepairRecord checkOwnerAuth(Integer repairId, String currentOwnerId) {
+        RepairRecord record = repairService.findById(repairId);
+        if (record == null) {
+            return null;
+        }
+        if (!currentOwnerId.equals(record.getOwnerId())) {
+            logger.warn("越权访问警告：用户 {} 尝试访问报修单 {}", currentOwnerId, repairId);
+            return null;
+        }
+        return record;
+    }
+
+    /**
+     * 验证优先级参数
+     */
+    private boolean isValidPriority(String priority) {
+        return "normal".equals(priority) || "urgent".equals(priority) || "emergency".equals(priority);
+    }
 }

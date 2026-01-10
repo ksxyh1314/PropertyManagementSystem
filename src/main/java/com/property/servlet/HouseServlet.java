@@ -1,7 +1,9 @@
 package com.property.servlet;
+
 import java.util.Arrays;
 import com.property.entity.House;
 import com.property.entity.Owner;
+import com.property.entity.User;
 import com.property.service.HouseService;
 import com.property.service.OwnerService;
 import com.property.util.ExcelExportUtil;
@@ -18,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 房屋管理Servlet
+ * 房屋管理Servlet（✅ 增加日志记录）
  */
 @WebServlet("/admin/house")
 public class HouseServlet extends BaseServlet {
@@ -133,12 +135,15 @@ public class HouseServlet extends BaseServlet {
     }
 
     /**
-     * 添加房屋
+     * ✅ 添加房屋（增加日志记录）
      */
     public void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String houseId = getStringParameter(req, "houseId");
         String buildingNo = getStringParameter(req, "buildingNo");
@@ -186,7 +191,8 @@ public class HouseServlet extends BaseServlet {
         }
 
         try {
-            boolean success = houseService.addHouse(house);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.addHouse(house, currentUser.getUserId(), req);
             if (success) {
                 writeSuccess(resp, "添加房屋成功");
             } else {
@@ -201,12 +207,15 @@ public class HouseServlet extends BaseServlet {
     }
 
     /**
-     * 更新房屋
+     * ✅ 更新房屋（增加日志记录）
      */
     public void update(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String houseId = getStringParameter(req, "houseId");
         if (houseId == null || houseId.isEmpty()) {
@@ -259,7 +268,8 @@ public class HouseServlet extends BaseServlet {
         }
 
         try {
-            boolean success = houseService.updateHouse(house);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.updateHouse(house, currentUser.getUserId(), req);
             if (success) {
                 writeSuccess(resp, "更新房屋成功");
             } else {
@@ -274,12 +284,15 @@ public class HouseServlet extends BaseServlet {
     }
 
     /**
-     * 删除房屋
+     * ✅ 删除房屋（增加日志记录）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String houseId = getStringParameter(req, "houseId");
         if (houseId == null || houseId.isEmpty()) {
@@ -288,7 +301,8 @@ public class HouseServlet extends BaseServlet {
         }
 
         try {
-            boolean success = houseService.deleteHouse(houseId);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.deleteHouse(houseId, currentUser.getUserId(), req);
             if (success) {
                 writeSuccess(resp, "删除房屋成功");
             } else {
@@ -303,12 +317,15 @@ public class HouseServlet extends BaseServlet {
     }
 
     /**
-     * 分配业主
+     * ✅ 分配业主（增加日志记录）
      */
     public void assignOwner(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String houseId = getStringParameter(req, "houseId");
         String ownerId = getStringParameter(req, "ownerId");
@@ -335,8 +352,11 @@ public class HouseServlet extends BaseServlet {
             house.setOwnerId(ownerId);
             house.setHouseStatus("occupied"); // 设置为已入住
 
-            boolean success = houseService.updateHouse(house);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.updateHouse(house, currentUser.getUserId(), req);
             if (success) {
+                // ✅ 额外记录分配业主的日志
+                houseService.assignOwner(houseId, ownerId, currentUser.getUserId(), req);
                 writeSuccess(resp, "分配业主成功");
             } else {
                 writeError(resp, "分配业主失败");
@@ -429,9 +449,9 @@ public class HouseServlet extends BaseServlet {
         }
 
         try {
-            // 解析房屋ID列表（修改这里）
+            // 解析房屋ID列表
             String[] idsArray = idsParam.split(",");
-            List<String> ids = Arrays.asList(idsArray);  // ✅ 转换为 List<String>
+            List<String> ids = Arrays.asList(idsArray);
 
             List<House> houseList = houseService.findByIds(ids);
 
@@ -461,6 +481,7 @@ public class HouseServlet extends BaseServlet {
             writeError(resp, "导出失败：" + e.getMessage());
         }
     }
+
     /**
      * 获取楼栋列表
      */
@@ -498,6 +519,187 @@ public class HouseServlet extends BaseServlet {
         } catch (Exception e) {
             logger.error("统计房屋数量失败", e);
             writeError(resp, "统计失败：" + e.getMessage());
+        }
+    }
+    /**
+     * ✅ 标记房屋为已售（简化版，不记录金额）
+     */
+    public void markAsSold(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!checkRole(req, resp, "admin")) {
+            return;
+        }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
+
+        String houseId = getStringParameter(req, "houseId");
+        String ownerId = getStringParameter(req, "ownerId");
+
+        if (houseId == null || houseId.isEmpty()) {
+            writeError(resp, "房屋ID不能为空");
+            return;
+        }
+
+        if (ownerId == null || ownerId.isEmpty()) {
+            writeError(resp, "业主ID不能为空");
+            return;
+        }
+
+        try {
+            // 获取房屋信息
+            House house = houseService.findById(houseId);
+            if (house == null) {
+                writeError(resp, "房屋不存在");
+                return;
+            }
+
+            // 检查房屋状态
+            if ("sold".equals(house.getSaleStatus())) {
+                writeError(resp, "该房屋已售出，无法重复操作");
+                return;
+            }
+
+            // 检查业主是否存在
+            Owner owner = ownerService.findById(ownerId);
+            if (owner == null) {
+                writeError(resp, "业主不存在");
+                return;
+            }
+
+            // 更新房屋状态
+            house.setSaleStatus("sold");        // 标记为已售
+            house.setHouseStatus("occupied");   // 标记为已入住
+            house.setOwnerId(ownerId);          // 设置业主
+
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.updateHouse(house, currentUser.getUserId(), req);
+
+            if (success) {
+                // ✅ 记录出售操作日志
+                houseService.logHouseSale(houseId, ownerId, currentUser.getUserId(), req);
+                writeSuccess(resp, "房屋出售成功");
+            } else {
+                writeError(resp, "房屋出售失败");
+            }
+        } catch (Exception e) {
+            logger.error("房屋出售失败", e);
+            writeError(resp, "出售失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ 标记房屋为待售（取消已售状态）
+     */
+    public void markAsForSale(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!checkRole(req, resp, "admin")) {
+            return;
+        }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
+
+        String houseId = getStringParameter(req, "houseId");
+
+        if (houseId == null || houseId.isEmpty()) {
+            writeError(resp, "房屋ID不能为空");
+            return;
+        }
+
+        try {
+            // 获取房屋信息
+            House house = houseService.findById(houseId);
+            if (house == null) {
+                writeError(resp, "房屋不存在");
+                return;
+            }
+
+            // 保存原业主ID用于日志
+            String oldOwnerId = house.getOwnerId();
+
+            // 更新房屋状态
+            house.setSaleStatus("for_sale");    // 标记为待售
+            house.setHouseStatus("vacant");     // 标记为空置
+            house.setOwnerId(null);             // 清空业主
+
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.updateHouse(house, currentUser.getUserId(), req);
+
+            if (success) {
+                // ✅ 记录取消出售日志
+                houseService.logCancelSale(houseId, oldOwnerId, currentUser.getUserId(), req);
+                writeSuccess(resp, "房屋已标记为待售");
+            } else {
+                writeError(resp, "操作失败");
+            }
+        } catch (Exception e) {
+            logger.error("标记待售失败", e);
+            writeError(resp, "操作失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ 标记房屋为已租（简化版）
+     */
+    public void markAsLeased(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!checkRole(req, resp, "admin")) {
+            return;
+        }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
+
+        String houseId = getStringParameter(req, "houseId");
+        String ownerId = getStringParameter(req, "ownerId");
+
+        if (houseId == null || houseId.isEmpty()) {
+            writeError(resp, "房屋ID不能为空");
+            return;
+        }
+
+        if (ownerId == null || ownerId.isEmpty()) {
+            writeError(resp, "租户ID不能为空");
+            return;
+        }
+
+        try {
+            // 获取房屋信息
+            House house = houseService.findById(houseId);
+            if (house == null) {
+                writeError(resp, "房屋不存在");
+                return;
+            }
+
+            // 检查房屋状态
+            if ("leased".equals(house.getSaleStatus())) {
+                writeError(resp, "该房屋已出租，无法重复操作");
+                return;
+            }
+
+            // 检查租户是否存在
+            Owner owner = ownerService.findById(ownerId);
+            if (owner == null) {
+                writeError(resp, "租户不存在");
+                return;
+            }
+
+            // 更新房屋状态
+            house.setSaleStatus("leased");      // 标记为已租
+            house.setHouseStatus("rented");     // 标记为出租中
+            house.setOwnerId(ownerId);          // 设置租户
+
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = houseService.updateHouse(house, currentUser.getUserId(), req);
+
+            if (success) {
+                // ✅ 记录出租操作日志
+                houseService.logHouseLease(houseId, ownerId, currentUser.getUserId(), req);
+                writeSuccess(resp, "房屋出租成功");
+            } else {
+                writeError(resp, "房屋出租失败");
+            }
+        } catch (Exception e) {
+            logger.error("房屋出租失败", e);
+            writeError(resp, "出租失败：" + e.getMessage());
         }
     }
 

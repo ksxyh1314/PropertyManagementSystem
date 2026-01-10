@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 管理员端公告 Servlet
+ * 管理员端公告 Servlet（✅ 增加日志记录）
  * 路径: /announcement
  * 功能：公告的增删改查、发布管理
  */
@@ -252,7 +252,7 @@ public class AnnouncementServlet extends HttpServlet {
     // ==================== POST 请求处理方法 ====================
 
     /**
-     * 添加公告
+     * 添加公告（✅ 增加日志记录）
      */
     private void addAnnouncement(HttpServletRequest request, HttpServletResponse response, HttpSession session)
             throws IOException {
@@ -296,8 +296,8 @@ public class AnnouncementServlet extends HttpServlet {
                 announcement.setStatus(1); // 默认已发布
             }
 
-            // 🔥 调用 Service 添加
-            boolean success = announcementService.addAnnouncement(announcement);
+            // ✅ 调用 Service 添加（传入 request 记录日志）
+            boolean success = announcementService.addAnnouncement(announcement, request);
 
             if (success) {
                 logger.info("✅ 公告添加成功");
@@ -314,7 +314,7 @@ public class AnnouncementServlet extends HttpServlet {
     }
 
     /**
-     * 更新公告
+     * 更新公告（✅ 增加日志记录）
      */
     private void updateAnnouncement(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -344,8 +344,8 @@ public class AnnouncementServlet extends HttpServlet {
                 return;
             }
 
-            // 🔥 调用 Service 更新
-            boolean success = announcementService.updateAnnouncement(announcement);
+            // ✅ 调用 Service 更新（传入 request 记录日志）
+            boolean success = announcementService.updateAnnouncement(announcement, request);
 
             if (success) {
                 logger.info("✅ 公告更新成功");
@@ -362,7 +362,7 @@ public class AnnouncementServlet extends HttpServlet {
     }
 
     /**
-     * 删除公告
+     * 删除公告（✅ 增加日志记录）
      */
     private void deleteAnnouncement(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -377,8 +377,8 @@ public class AnnouncementServlet extends HttpServlet {
         logger.info(">>> 删除公告，ID: {}", id);
 
         try {
-            // 🔥 调用 Service 的 deleteAnnouncement 方法
-            boolean success = announcementService.deleteAnnouncement(id);
+            // ✅ 调用 Service 的 deleteAnnouncement 方法（传入 request 记录日志）
+            boolean success = announcementService.deleteAnnouncement(id, request);
 
             if (success) {
                 logger.info("✅ 公告删除成功");
@@ -395,7 +395,7 @@ public class AnnouncementServlet extends HttpServlet {
     }
 
     /**
-     * 批量删除公告
+     * 批量删除公告（✅ 增加日志记录）
      */
     private void batchDeleteAnnouncement(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -418,8 +418,8 @@ public class AnnouncementServlet extends HttpServlet {
 
             logger.info("删除ID列表: {}", ids);
 
-            // 🔥 调用 Service 批量删除
-            boolean success = announcementService.batchDelete(ids);
+            // ✅ 调用 Service 批量删除（传入 request 记录日志）
+            boolean success = announcementService.batchDelete(ids, request);
 
             if (success) {
                 logger.info("✅ 批量删除完成");
@@ -436,7 +436,7 @@ public class AnnouncementServlet extends HttpServlet {
     }
 
     /**
-     * 更新公告状态（发布/取消发布）
+     * 更新公告状态（发布/取消发布）（✅ 增加日志记录）
      */
     private void updateStatus(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -452,8 +452,8 @@ public class AnnouncementServlet extends HttpServlet {
         logger.info(">>> 更新公告状态，ID: {}, status: {}", id, status);
 
         try {
-            // 🔥 调用 Service 的 updateAnnouncementStatus 方法
-            boolean success = announcementService.updateAnnouncementStatus(id, status);
+            // ✅ 调用 Service 的 updateAnnouncementStatus 方法（传入 request 记录日志）
+            boolean success = announcementService.updateAnnouncementStatus(id, status, request);
 
             if (success) {
                 String statusText = (status == 1) ? "发布" : "取消发布";
@@ -471,7 +471,7 @@ public class AnnouncementServlet extends HttpServlet {
     }
 
     /**
-     * 批量更新状态
+     * 批量更新状态（✅ 增加日志记录）
      */
     private void batchUpdateStatus(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -502,8 +502,8 @@ public class AnnouncementServlet extends HttpServlet {
 
             logger.info("ID列表: {}, status: {}", ids, status);
 
-            // 🔥 调用 Service 批量更新
-            boolean success = announcementService.batchUpdateStatus(ids, status);
+            // ✅ 调用 Service 批量更新（传入 request 记录日志）
+            boolean success = announcementService.batchUpdateStatus(ids, status, request);
 
             if (success) {
                 String statusText = (status == 1) ? "发布" : "取消发布";

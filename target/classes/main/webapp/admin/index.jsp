@@ -127,25 +127,22 @@
         /* 🔥 优化后的统计卡片标题 */
         .section-title {
             font-size: 20px; font-weight: 600; color: white;
-            margin: 60px 0 20px 0; /* 👈 增加顶部间距 */
+            margin: 60px 0 20px 0;
             padding-left: 15px;
             border-left: 5px solid white; display: flex; align-items: center;
         }
         .section-title i { margin-right: 10px; }
 
-        /* 第一个标题不需要太大间距 */
         .section-title:first-of-type {
             margin-top: 0;
         }
 
-        /* 移动端适配 */
         @media (max-width: 768px) {
             .section-title {
                 margin: 40px 0 15px 0;
                 font-size: 18px;
             }
         }
-
 
         .stats-card {
             background: white; border-radius: 15px; padding: 25px;
@@ -204,7 +201,7 @@
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 20px;
-            margin-top: 30px; /* 👈 添加顶部间距 */
+            margin-top: 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transition: all 0.3s;
         }
@@ -232,7 +229,6 @@
             height: 3px;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         }
-
 
         /* 🔥 优化表格样式 */
         .table-responsive {
@@ -493,6 +489,18 @@
                 <i class="fas fa-chart-bar"></i> 统计报表
             </a>
         </li>
+        <!-- ✅ 新增：操作日志 -->
+        <li>
+            <a href="${pageContext.request.contextPath}/admin/operationLog.jsp">
+                <i class="fas fa-history"></i> 操作日志
+            </a>
+        </li>
+        <!-- ✅ 新增：备份管理 -->
+        <li>
+            <a href="${pageContext.request.contextPath}/admin/backup.jsp">
+                <i class="fas fa-database"></i> 备份管理
+            </a>
+        </li>
     </ul>
 
     <div class="sidebar-footer">
@@ -551,10 +559,15 @@
                 <div class="stats-info">
                     <h3 id="paymentRate">-%</h3>
                     <p>本月收缴率</p>
-                    <small>已缴: <span id="paidCount">-</span> | 未缴: <span id="unpaidCount">-</span></small>
+                    <small style="display: block; line-height: 1.5;">
+                        <i class="fas fa-info-circle"></i> 统计本月月度、季度、年度账单<br>
+                        （如：2026年1月、2026年第1季度、2026年）
+                    </small>
+
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- 🔥 报修管理统计 -->
@@ -651,7 +664,7 @@
         </div>
     </div>
 
-    <!-- 🔥 图表区域（修复高度） -->
+    <!-- 🔥 图表区域 -->
     <div class="row">
         <div class="col-md-4">
             <div class="chart-card">
@@ -733,6 +746,7 @@
         </div>
     </div>
 </div>
+
 <!-- 🔥 报修详情模态框 -->
 <div class="modal fade" id="repairDetailModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
@@ -896,7 +910,7 @@
     var currentRepairId = null;
     var currentComplaintId = null;
     var currentUserId = <c:out value="${sessionScope.currentUser.userId}" default="1" />;
-    var allCharts = []; // 🔥 统一管理所有图表
+    var allCharts = [];
 
     $(function() {
         console.log('🚀 系统初始化...');
@@ -905,12 +919,10 @@
         loadComplaintStatistics();
         loadPendingComplaints();
 
-        // 检查屏幕宽度，移动端默认隐藏侧边栏
         if ($(window).width() <= 768) {
             toggleSidebar();
         }
 
-        // 🔥 统一监听窗口大小变化
         window.addEventListener('resize', function() {
             allCharts.forEach(function(chart) {
                 if (chart && !chart.isDisposed()) {
@@ -920,7 +932,6 @@
         });
     });
 
-    // 切换侧边栏
     function toggleSidebar() {
         var sidebar = $('#sidebar');
         var mainContent = $('#mainContent');
@@ -938,7 +949,6 @@
         }
     }
 
-    // 🔥 加载仪表盘数据（已修复）
     function loadDashboardData() {
         console.log('📊 加载仪表盘数据...');
         $.ajax({
@@ -951,13 +961,11 @@
                 if (result.success) {
                     var data = result.data;
 
-                    // 基础数据
                     $('#totalHouses').text(data.totalHouses || 0);
                     $('#occupiedHouses').text(data.occupiedHouses || 0);
                     $('#vacantHouses').text(data.vacantHouses || 0);
                     $('#totalOwners').text(data.totalOwners || 0);
 
-                    // 缴费数据
                     var monthlyIncome = data.monthlyIncome || 0;
                     $('#monthlyIncome').text(monthlyIncome.toLocaleString());
                     var rate = data.paymentRate || 0;
@@ -965,7 +973,6 @@
                     $('#paidCount').text(data.paidCount || 0);
                     $('#unpaidCount').text(data.unpaidCount || 0);
 
-                    // 🔥 报修数据（修复）
                     $('#pendingRepairs').text(data.pendingRepairs || 0);
                     $('#processingRepairs').text(data.processingRepairs || 0);
                     $('#completedRepairs').text(data.completedRepairs || 0);
@@ -984,13 +991,11 @@
                     error: error,
                     response: xhr.responseText
                 });
-                // 设置默认值
                 $('#totalHouses, #totalOwners, #monthlyIncome, #pendingRepairs, #processingRepairs, #completedRepairs').text('0');
                 $('#paymentRate, #avgRating').text('0.0');
             }
         });
 
-        // 加载收费趋势
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/statistics',
             type: 'GET',
@@ -1008,7 +1013,6 @@
         });
     }
 
-    // 🔥 加载投诉统计数据（已修复）
     function loadComplaintStatistics() {
         console.log('📊 加载投诉统计...');
         $.ajax({
@@ -1018,10 +1022,8 @@
             success: function(result) {
                 console.log('✅ 投诉统计数据:', result);
                 if (result.success) {
-                    // 🔥 修复：兼容 result.data 和 result.overall
                     var data = result.data || result.overall || {};
 
-                    // 🔥 兼容驼峰和下划线命名
                     $('#pendingComplaints').text(data.pending_count || data.pendingCount || 0);
                     $('#processingComplaints').text(data.processing_count || data.processingCount || 0);
                     $('#resolvedComplaints').text(data.resolved_count || data.resolvedCount || 0);
@@ -1039,26 +1041,24 @@
                     error: error,
                     response: xhr.responseText
                 });
-                // 设置默认值
                 $('#pendingComplaints, #processingComplaints, #resolvedComplaints').text('0');
                 $('#complaintResolveRate').text('0.00%');
             }
         });
     }
 
-    // 🔥 绘制房屋状态图表（修复图例和标签）
     function drawHouseChart(data) {
         if (typeof echarts === 'undefined') return;
         var chartDom = document.getElementById('houseChart');
         if (!chartDom) return;
 
         var chart = echarts.init(chartDom);
-        allCharts.push(chart); // 添加到数组
+        allCharts.push(chart);
 
         var chartData = [
             {value: data.occupiedHouses || 0, name: '已入住', itemStyle: {color: '#667eea'}},
             {value: data.vacantHouses || 0, name: '空置', itemStyle: {color: '#91cc75'}}
-        ].filter(item => item.value > 0); // 🔥 过滤掉值为0的数据
+        ].filter(item => item.value > 0);
 
         var option = {
             tooltip: {
@@ -1066,14 +1066,14 @@
                 formatter: '{b}: {c} ({d}%)'
             },
             legend: {
-                orient: 'horizontal', // 🔥 改为水平排列
-                bottom: '5%',         // 🔥 放到底部
-                left: 'center'        // 🔥 居中显示
+                orient: 'horizontal',
+                bottom: '5%',
+                left: 'center'
             },
             series: [{
                 type: 'pie',
                 radius: ['40%', '65%'],
-                center: ['50%', '42%'], // 🔥 饼图居中偏上
+                center: ['50%', '42%'],
                 data: chartData,
                 label: {
                     formatter: '{b}\n{c}',
@@ -1099,21 +1099,20 @@
         chart.setOption(option);
     }
 
-    // 🔥 绘制报修状态图表（修复：添加已取消状态）
     function drawRepairChart(data) {
         if (typeof echarts === 'undefined') return;
         var chartDom = document.getElementById('repairChart');
         if (!chartDom) return;
 
         var chart = echarts.init(chartDom);
-        allCharts.push(chart); // 添加到数组
+        allCharts.push(chart);
 
         var chartData = [
             {value: data.pendingRepairs || 0, name: '待处理', itemStyle: {color: '#fac858'}},
             {value: data.processingRepairs || 0, name: '处理中', itemStyle: {color: '#5470c6'}},
             {value: data.completedRepairs || 0, name: '已完成', itemStyle: {color: '#91cc75'}},
-            {value: data.cancelledRepairs || 0, name: '已取消', itemStyle: {color: '#ee6666'}}  // ✅ 添加已取消
-        ].filter(item => item.value > 0); // 🔥 过滤掉值为0的数据
+            {value: data.cancelledRepairs || 0, name: '已取消', itemStyle: {color: '#ee6666'}}
+        ].filter(item => item.value > 0);
 
         var option = {
             tooltip: {
@@ -1121,14 +1120,14 @@
                 formatter: '{b}: {c} ({d}%)'
             },
             legend: {
-                orient: 'horizontal', // 🔥 改为水平排列
-                bottom: '5%',         // 🔥 放到底部
-                left: 'center'        // 🔥 居中显示
+                orient: 'horizontal',
+                bottom: '5%',
+                left: 'center'
             },
             series: [{
                 type: 'pie',
                 radius: ['40%', '65%'],
-                center: ['50%', '42%'], // 🔥 饼图居中偏上
+                center: ['50%', '42%'],
                 data: chartData,
                 label: {
                     formatter: '{b}\n{c}',
@@ -1154,23 +1153,20 @@
         chart.setOption(option);
     }
 
-
-    // 🔥 绘制投诉状态分布图表（修复图例和标签）
     function drawComplaintChart(data) {
         if (typeof echarts === 'undefined') return;
         var chartDom = document.getElementById('complaintChart');
         if (!chartDom) return;
 
         var chart = echarts.init(chartDom);
-        allCharts.push(chart); // 添加到数组
+        allCharts.push(chart);
 
-        // 🔥 兼容驼峰和下划线命名，并过滤掉值为0的数据
         var chartData = [
             {value: data.pending_count || data.pendingCount || 0, name: '待处理', itemStyle: {color: '#ff6b6b'}},
             {value: data.processing_count || data.processingCount || 0, name: '处理中', itemStyle: {color: '#4facfe'}},
             {value: data.resolved_count || data.resolvedCount || 0, name: '已解决', itemStyle: {color: '#91cc75'}},
             {value: data.closed_count || data.closedCount || 0, name: '已关闭', itemStyle: {color: '#9e9e9e'}}
-        ].filter(item => item.value > 0); // 🔥 过滤掉值为0的数据
+        ].filter(item => item.value > 0);
 
         var option = {
             tooltip: {
@@ -1178,14 +1174,14 @@
                 formatter: '{b}: {c} ({d}%)'
             },
             legend: {
-                orient: 'horizontal', // 🔥 改为水平排列
-                bottom: '5%',         // 🔥 放到底部
-                left: 'center'        // 🔥 居中显示
+                orient: 'horizontal',
+                bottom: '5%',
+                left: 'center'
             },
             series: [{
                 type: 'pie',
                 radius: ['40%', '65%'],
-                center: ['50%', '42%'], // 🔥 饼图居中偏上
+                center: ['50%', '42%'],
                 data: chartData,
                 label: {
                     formatter: '{b}\n{c}',
@@ -1211,14 +1207,13 @@
         chart.setOption(option);
     }
 
-    // 🔥 绘制收费趋势图表（修复Y轴刻度）
     function drawTrendChart(data) {
         if (typeof echarts === 'undefined') return;
         var chartDom = document.getElementById('trendChart');
         if (!chartDom) return;
 
         var chart = echarts.init(chartDom);
-        allCharts.push(chart); // 添加到数组
+        allCharts.push(chart);
 
         var months = [], totalAmounts = [], paidAmounts = [];
 
@@ -1258,7 +1253,6 @@
                 name: '金额（元）',
                 axisLabel: {
                     formatter: function(value) {
-                        // 🔥 修复：优化金额显示格式
                         if (value >= 10000) {
                             return '¥' + (value / 10000).toFixed(1) + 'w';
                         } else if (value >= 1000) {
@@ -1308,7 +1302,6 @@
         chart.setOption(option);
     }
 
-    // 🔥 加载待处理投诉列表（已修复）
     function loadPendingComplaints() {
         console.log('📋 加载待处理投诉...');
         $.ajax({
@@ -1329,7 +1322,6 @@
                     }
 
                     complaints.forEach(function(complaint) {
-                        // 🔥 兼容驼峰和下划线命名
                         var complaintId = complaint.complaintId || complaint.complaint_id;
                         var complaintType = complaint.complaintType || complaint.complaint_type;
                         var ownerName = complaint.ownerName || complaint.owner_name;
@@ -1361,8 +1353,6 @@
         });
     }
 
-
-    // 🔥 受理投诉（使用模态框）
     $('#btnAcceptComplaint').click(function() {
         if (!currentComplaintId) return;
         $('#complaintDetailModal').modal('hide');
@@ -1394,7 +1384,6 @@
         });
     }
 
-    // 🔥 回复投诉（使用模态框）
     $('#btnReplyComplaint').click(function() {
         if (!currentComplaintId) return;
         $('#complaintDetailModal').modal('hide');
@@ -1443,7 +1432,6 @@
         });
     }
 
-    // 🔥 加载待处理报修（已修复）
     function loadPendingRepairs() {
         console.log('📋 加载待处理报修...');
         $.ajax({
@@ -1461,7 +1449,6 @@
                         return;
                     }
                     result.data.forEach(function(repair) {
-                        // 🔥 兼容驼峰和下划线命名
                         var repairId = repair.repairId || repair.repair_id;
                         var ownerName = repair.ownerName || repair.owner_name;
                         var houseId = repair.houseId || repair.house_id;
@@ -1490,9 +1477,7 @@
             }
         });
     }
-    /**
-     * ✨ 查看投诉详情（只优化追加内容显示）
-     */
+
     function viewComplaint(complaintId) {
         console.log('👁️ 查看投诉详情:', complaintId);
         currentComplaintId = complaintId;
@@ -1508,7 +1493,6 @@
                 if (result.success && result.data) {
                     var complaint = result.data;
 
-                    // 🔥 兼容驼峰和下划线命名
                     var complaintId = complaint.complaintId || complaint.complaint_id;
                     var ownerName = complaint.ownerName || complaint.owner_name;
                     var ownerPhone = complaint.ownerPhone || complaint.owner_phone;
@@ -1541,20 +1525,16 @@
                         '</div>' +
                         '</div>';
 
-                    // 🔥 投诉内容区域（时间线样式 - 只优化这一部分）
                     html += '<div class="detail-item">' +
                         '<small><i class="fas fa-align-left"></i> 投诉内容</small>' +
                         '<div style="position: relative; padding: 20px 0;">';
 
-                    // 时间线左侧线条
                     html += '<div style="position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);"></div>';
 
-                    // 解析内容 (分离原始内容和追加内容)
                     var fullContent = complaint.content || '';
                     var contentParts = fullContent.split(/【.*?追加】/);
                     var timeMatches = fullContent.match(/【(.*?)追加】/g);
 
-                    // 原始投诉内容
                     html += '<div style="position: relative; padding-left: 60px; margin-bottom: 25px;">' +
                         '<div style="position: absolute; left: 10px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 8px rgba(240, 147, 251, 0.4); z-index: 2;">' +
                         '<i class="fas fa-file-alt"></i>' +
@@ -1568,7 +1548,6 @@
                         '</div>' +
                         '</div>';
 
-                    // ✅ 追加内容 (如果有)
                     if (contentParts.length > 1) {
                         for (var i = 1; i < contentParts.length; i++) {
                             var appendTime = timeMatches && timeMatches[i-1] ? timeMatches[i-1].replace(/【|追加】/g, '').trim() : '未知时间';
@@ -1587,9 +1566,8 @@
                         }
                     }
 
-                    html += '</div></div>'; // 结束时间线
+                    html += '</div></div>';
 
-                    // 回复内容（保持原样）
                     if (complaint.reply) {
                         html += '<div class="detail-item">' +
                             '<small><i class="fas fa-reply"></i> 回复内容</small>' +
@@ -1601,7 +1579,6 @@
                             '</div>';
                     }
 
-                    // 响应时长（保持原样）
                     if (responseHours !== undefined && responseHours !== null) {
                         html += '<div class="detail-item">' +
                             '<small><i class="fas fa-hourglass-half"></i> 响应时长</small>' +
@@ -1613,7 +1590,6 @@
 
                     $('#complaintDetailContent').html(html);
 
-                    // 根据状态显示按钮
                     if (complaintStatus === 'pending') {
                         $('#btnAcceptComplaint').show();
                         $('#btnReplyComplaint').hide();
@@ -1635,7 +1611,6 @@
         });
     }
 
-    // 🔥 查看报修详情（已修复）
     function viewRepair(repairId) {
         console.log('👁️ 查看报修详情:', repairId);
         currentRepairId = repairId;
@@ -1652,7 +1627,6 @@
                 if (result.success && result.data) {
                     var repair = result.data;
 
-                    // 🔥 兼容驼峰和下划线命名
                     var repairId = repair.repairId || repair.repair_id;
                     var ownerId = repair.ownerId || repair.owner_id;
                     var ownerName = repair.ownerName || repair.owner_name;
@@ -1802,7 +1776,6 @@
         });
     }
 
-    // 🔥 受理报修（使用模态框）
     $('#btnAcceptRepair').click(function() {
         if (!currentRepairId) return;
         $('#repairDetailModal').modal('hide');
@@ -1850,7 +1823,6 @@
         });
     }
 
-    // 🔥 辅助函数
     function getComplaintTypeName(type) {
         var types = {
             'environment': '环境卫生',
@@ -1942,3 +1914,4 @@
 
 </body>
 </html>
+

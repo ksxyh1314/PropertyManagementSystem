@@ -4,7 +4,9 @@ import com.property.dao.ComplaintDao;
 import com.property.entity.Complaint;
 import com.property.entity.User;
 import com.property.util.DBUtil;
+import com.property.util.LogUtil;
 
+import javax.servlet.http.HttpServletRequest;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 投诉服务层 (完整修复版)
+ * 投诉服务层 (✅ 仅在未使用存储过程的操作中记录日志)
  */
 public class ComplaintService {
 
@@ -21,7 +23,7 @@ public class ComplaintService {
     // ==================== 1. 核心业务方法 ====================
 
     /**
-     * 提交投诉（✅ 修复版：确保 ownerId 不为空）
+     * 提交投诉（✅ 使用存储过程 sp_submit_complaint，已包含日志记录）
      */
     public Map<String, Object> submitComplaint(Complaint complaint) {
         // 🔥🔥🔥 关键修复1：验证 ownerId 不能为空
@@ -53,7 +55,7 @@ public class ComplaintService {
         System.out.println("    标题: " + complaint.getTitle());
         System.out.println("    类型: " + complaint.getComplaintType());
 
-        // 调用 DAO 层插入
+        // ✅ 调用 DAO 层插入（存储过程已记录日志，这里不需要重复记录）
         Map<String, Object> result = complaintDao.submitComplaint(complaint);
 
         if (result.get("success") == Boolean.TRUE) {
@@ -64,15 +66,22 @@ public class ComplaintService {
 
         return result;
     }
-
     /**
-     * 查询投诉列表 (支持存储过程)
+     * 查询投诉列表 (支持存储过程 sp_get_complaints)
+     * 🔥 修复版：正确处理 owner_id 参数类型
      */
     public Map<String, Object> getComplaints(String ownerId, String complaintType,
                                              String complaintStatus, String keyword,
                                              Integer pageNum, Integer pageSize) {
 
         System.out.println("\n=== ComplaintService.getComplaints 开始执行 ===");
+        System.out.println(">>> 接收参数:");
+        System.out.println("    ownerId: [" + ownerId + "] (长度: " + (ownerId != null ? ownerId.length() : "null") + ")");
+        System.out.println("    complaintType: " + complaintType);
+        System.out.println("    complaintStatus: " + complaintStatus);
+        System.out.println("    keyword: " + keyword);
+        System.out.println("    pageNum: " + pageNum);
+        System.out.println("    pageSize: " + pageSize);
 
         Connection conn = null;
         CallableStatement stmt = null;
@@ -86,89 +95,121 @@ public class ComplaintService {
             // 调用存储过程 sp_get_complaints
             stmt = conn.prepareCall("{CALL sp_get_complaints(?, ?, ?, ?, ?, ?, ?)}");
 
-            // 1. ownerId
-            if (ownerId == null || ownerId.isEmpty() || "null".equalsIgnoreCase(ownerId)) {
-                stmt.setNull(1, Types.INTEGER);
+            // 🔥🔥🔥 关键修复：ownerId 应该作为字符串传递
+            // 1. @p_owner_id (CHAR(8))
+            if (ownerId == null || ownerId.trim().isEmpty() || "null".equalsIgnoreCase(ownerId)) {
+                stmt.setNull(1, Types.CHAR);  // ✅ 修改为 Types.CHAR
+                System.out.println(">>> 参数1 (ownerId): NULL");
             } else {
-                stmt.setInt(1, Integer.parseInt(ownerId));
+                stmt.setString(1, ownerId);  // ✅ 修改为 setString，保留前导零
+                System.out.println(">>> 参数1 (ownerId): [" + ownerId + "]");
             }
 
-            // 2. complaintType
-            if (complaintType == null || complaintType.isEmpty()) {
+            // 2. @p_complaint_type (NVARCHAR(50))
+            if (complaintType == null || complaintType.trim().isEmpty()) {
                 stmt.setNull(2, Types.NVARCHAR);
             } else {
                 stmt.setString(2, complaintType);
             }
+            System.out.println(">>> 参数2 (complaintType): " + complaintType);
 
-            // 3. complaintStatus
-            if (complaintStatus == null || complaintStatus.isEmpty()) {
+            // 3. @p_complaint_status (NVARCHAR(20))
+            if (complaintStatus == null || complaintStatus.trim().isEmpty()) {
                 stmt.setNull(3, Types.NVARCHAR);
             } else {
                 stmt.setString(3, complaintStatus);
             }
+            System.out.println(">>> 参数3 (complaintStatus): " + complaintStatus);
 
-            // 4. keyword
-            if (keyword == null || keyword.isEmpty()) {
+            // 4. @p_keyword (NVARCHAR(200))
+            if (keyword == null || keyword.trim().isEmpty()) {
                 stmt.setNull(4, Types.NVARCHAR);
             } else {
                 stmt.setString(4, keyword);
             }
+            System.out.println(">>> 参数4 (keyword): " + keyword);
 
-            // 5. pageNum & 6. pageSize
+            // 5. @p_page_num (INT)
             stmt.setInt(5, pageNum != null ? pageNum : 1);
-            stmt.setInt(6, pageSize != null ? pageSize : 10);
+            System.out.println(">>> 参数5 (pageNum): " + (pageNum != null ? pageNum : 1));
 
-            // 7. totalCount (Output)
+            // 6. @p_page_size (INT)
+            stmt.setInt(6, pageSize != null ? pageSize : 10);
+            System.out.println(">>> 参数6 (pageSize): " + (pageSize != null ? pageSize : 10));
+
+            // 7. @p_total_count (INT OUTPUT)
             stmt.registerOutParameter(7, Types.INTEGER);
 
+            System.out.println(">>> 开始执行存储过程...");
             rs = stmt.executeQuery();
 
+            int rowCount = 0;
             while (rs.next()) {
+                rowCount++;
                 Complaint complaint = new Complaint();
-                complaint.setComplaintId(rs.getInt("complaintId"));
-                complaint.setOwnerId(rs.getString("ownerId"));
-                complaint.setOwnerName(rs.getString("ownerName"));
-                complaint.setOwnerPhone(rs.getString("ownerPhone"));
-                complaint.setComplaintType(rs.getString("complaintType"));
-                complaint.setComplaintTypeName(rs.getString("complaintTypeName"));
+
+                // 🔥 注意：存储过程返回的字段名是小写的 complaintid, ownerid 等
+                complaint.setComplaintId(rs.getInt("complaintid"));
+                complaint.setOwnerId(rs.getString("ownerid"));
+                complaint.setOwnerName(rs.getString("ownername"));
+                complaint.setOwnerPhone(rs.getString("ownerphone"));
+                complaint.setComplaintType(rs.getString("complainttype"));
+                complaint.setComplaintTypeName(rs.getString("complainttypename"));
                 complaint.setTitle(rs.getString("title"));
                 complaint.setContent(rs.getString("content"));
-                complaint.setIsAnonymous(rs.getInt("isAnonymous"));
-                complaint.setComplaintStatus(rs.getString("complaintStatus"));
-                complaint.setComplaintStatusName(rs.getString("complaintStatusName"));
+                complaint.setIsAnonymous(rs.getInt("isanonymous"));
+                complaint.setComplaintStatus(rs.getString("complaintstatus"));
+                complaint.setComplaintStatusName(rs.getString("complaintstatusname"));
 
-                Timestamp submitTime = rs.getTimestamp("submitTime");
+                Timestamp submitTime = rs.getTimestamp("submittime");
                 if (submitTime != null) {
                     complaint.setSubmitTime(submitTime.toLocalDateTime());
                 }
 
-                Object handlerIdObj = rs.getObject("handlerId");
+                Object handlerIdObj = rs.getObject("handlerid");
                 if (handlerIdObj != null) {
                     complaint.setHandlerId(((Number) handlerIdObj).intValue());
                 }
 
-                complaint.setHandlerName(rs.getString("handlerName"));
+                complaint.setHandlerName(rs.getString("handlername"));
                 complaint.setReply(rs.getString("reply"));
 
-                Timestamp replyTime = rs.getTimestamp("replyTime");
+                Timestamp replyTime = rs.getTimestamp("replytime");
                 if (replyTime != null) {
                     complaint.setReplyTime(replyTime.toLocalDateTime());
                 }
 
-                Object responseHoursObj = rs.getObject("responseHours");
+                Object responseHoursObj = rs.getObject("responsehours");
                 if (responseHoursObj != null) {
                     complaint.setResponseHours(((Number) responseHoursObj).intValue());
                 }
 
                 list.add(complaint);
+
+                // 🔥 打印第一条记录的详细信息
+                if (rowCount == 1) {
+                    System.out.println(">>> 第一条记录:");
+                    System.out.println("    complaintId: " + complaint.getComplaintId());
+                    System.out.println("    ownerId: [" + complaint.getOwnerId() + "]");
+                    System.out.println("    title: " + complaint.getTitle());
+                    System.out.println("    status: " + complaint.getComplaintStatus());
+                }
             }
 
             int totalCount = stmt.getInt(7);
+
+            System.out.println(">>> 查询结果:");
+            System.out.println("    当前页记录数: " + rowCount);
+            System.out.println("    总记录数: " + totalCount);
+            System.out.println("=================================================\n");
+
             result.put("list", list);
             result.put("totalCount", totalCount);
 
         } catch (SQLException e) {
             System.err.println("❌ 查询投诉列表异常: " + e.getMessage());
+            System.err.println("❌ SQL State: " + e.getSQLState());
+            System.err.println("❌ Error Code: " + e.getErrorCode());
             e.printStackTrace();
             result.put("list", new ArrayList<>());
             result.put("totalCount", 0);
@@ -180,7 +221,7 @@ public class ComplaintService {
     }
 
     /**
-     * 查询投诉详情
+     * 查询投诉详情（使用存储过程 sp_get_complaint_detail）
      */
     public Complaint getComplaintDetail(Integer complaintId) {
         // 优先使用简单查询，失败则尝试存储过程
@@ -191,12 +232,18 @@ public class ComplaintService {
         return complaint;
     }
 
-    // ==================== 2. 管理员操作方法 ====================
+    // ==================== 2. 管理员操作方法（✅ 使用存储过程，已包含日志记录）====================
 
+    /**
+     * 受理投诉（✅ 使用存储过程 sp_accept_complaint，已包含日志记录）
+     */
     public Map<String, Object> acceptComplaint(Integer complaintId, Integer handlerId) {
         return complaintDao.acceptComplaint(complaintId, handlerId);
     }
 
+    /**
+     * 回复投诉（✅ 使用存储过程 sp_reply_complaint，已包含日志记录）
+     */
     public Map<String, Object> replyComplaint(Integer complaintId, Integer handlerId,
                                               String reply, String newStatus) {
         if (reply == null || reply.trim().isEmpty()) {
@@ -205,21 +252,33 @@ public class ComplaintService {
         return complaintDao.replyComplaint(complaintId, handlerId, reply, newStatus);
     }
 
+    /**
+     * 关闭投诉（✅ 使用存储过程 sp_close_complaint，已包含日志记录）
+     */
     public Map<String, Object> closeComplaint(Integer complaintId, Integer handlerId) {
         return complaintDao.closeComplaint(complaintId, handlerId);
     }
 
+    /**
+     * 删除投诉（✅ 使用存储过程 sp_delete_complaint，已包含日志记录）
+     */
     public Map<String, Object> deleteComplaint(Integer complaintId, Integer operatorId) {
         return complaintDao.deleteComplaint(complaintId, operatorId);
     }
 
-    // ==================== 3. 🔥 重点修复：取消/驳回逻辑 ====================
+    // ==================== 3. 🔥 重点修复：取消/驳回逻辑（✅ 需要手动记录日志）====================
 
     /**
-     * 🔥 取消/驳回投诉 (修复版 - 使用 closed 状态)
-     * 兼容 业主取消(撤回) 和 管理员驳回
+     * 取消/驳回投诉（支持不传 request）
      */
     public Map<String, Object> cancelComplaint(Integer complaintId, String reason, User currentUser) {
+        return cancelComplaint(complaintId, reason, currentUser, null);
+    }
+
+    /**
+     * 🔥 取消/驳回投诉（✅ 增加日志记录 - 因为没有使用存储过程）
+     */
+    public Map<String, Object> cancelComplaint(Integer complaintId, String reason, User currentUser, HttpServletRequest request) {
         System.out.println("=== 开始执行撤销投诉 ===");
         System.out.println("✅ Service: 取消/驳回投诉，ID: " + complaintId + ", 操作人: " + currentUser.getUsername());
 
@@ -275,6 +334,33 @@ public class ComplaintService {
             // 通过 reply 内容区分是撤销还是驳回
             boolean success = complaintDao.updateStatus(complaintId, "closed", finalReplyContent, handlerId);
 
+            // ✅ 记录日志（因为没有使用存储过程）
+            if (success) {
+                String operationType = "owner".equals(role) ? "complaint_cancel" : "complaint_reject";
+                String operationDesc = "owner".equals(role) ?
+                        "撤销投诉：" + complaint.getTitle() + "（ID:" + complaintId + "）" :
+                        "驳回投诉：" + complaint.getTitle() + "（ID:" + complaintId + "）";
+
+                if (request != null) {
+                    LogUtil.log(
+                            currentUser.getUserId() != null ? currentUser.getUserId() : 0,
+                            currentUser.getUsername(),
+                            operationType,
+                            operationDesc,
+                            LogUtil.getClientIP(request)
+                    );
+                } else {
+                    // 如果没有 request，使用默认 IP
+                    LogUtil.log(
+                            currentUser.getUserId() != null ? currentUser.getUserId() : 0,
+                            currentUser.getUsername(),
+                            operationType,
+                            operationDesc,
+                            "0.0.0.0"
+                    );
+                }
+            }
+
             return createResult(success, success ? "操作成功" : "操作失败");
 
         } catch (Exception e) {
@@ -284,7 +370,7 @@ public class ComplaintService {
         }
     }
 
-    // ==================== 4. 🔥 统计相关方法（修复版）====================
+    // ==================== 4. 🔥 统计相关方法（使用存储过程 sp_get_complaint_statistics）====================
 
     /**
      * 🔥 投诉统计（修复版：返回正确的数据结构）
@@ -542,9 +628,16 @@ public class ComplaintService {
     }
 
     /**
-     * 业主端：追加说明
+     * 业主端：追加说明（支持不传 request）
      */
     public Map<String, Object> appendContent(Integer complaintId, String ownerId, String additionalContent) {
+        return appendContent(complaintId, ownerId, additionalContent, null);
+    }
+
+    /**
+     * 业主端：追加说明（✅ 增加日志记录 - 因为没有使用存储过程）
+     */
+    public Map<String, Object> appendContent(Integer complaintId, String ownerId, String additionalContent, HttpServletRequest request) {
         if (additionalContent == null || additionalContent.trim().isEmpty()) {
             return createResult(false, "追加内容不能为空");
         }
@@ -557,6 +650,29 @@ public class ComplaintService {
                 return createResult(false, "已结案的投诉无法追加");
             }
             boolean success = complaintDao.appendContent(complaintId, additionalContent);
+
+            // ✅ 记录日志（因为没有使用存储过程）
+            if (success) {
+                if (request != null) {
+                    LogUtil.log(
+                            0,
+                            ownerId,
+                            "complaint_append",
+                            "追加投诉内容：" + complaint.getTitle() + "（ID:" + complaintId + "）",
+                            LogUtil.getClientIP(request)
+                    );
+                } else {
+                    // 如果没有 request，使用默认 IP
+                    LogUtil.log(
+                            0,
+                            ownerId,
+                            "complaint_append",
+                            "追加投诉内容：" + complaint.getTitle() + "（ID:" + complaintId + "）",
+                            "0.0.0.0"
+                    );
+                }
+            }
+
             return createResult(success, success ? "追加成功" : "追加失败");
         } catch (Exception e) {
             e.printStackTrace();
@@ -566,6 +682,7 @@ public class ComplaintService {
 
     /**
      * 🔥 业主端：删除投诉记录（仅限已撤销的记录）
+     * ✅ 使用存储过程 sp_delete_complaint，已包含日志记录
      */
     public boolean deleteComplaint(Integer complaintId) {
         System.out.println(">>> Service: 删除投诉记录，ID: " + complaintId);
@@ -589,7 +706,7 @@ public class ComplaintService {
         }
     }
 
-    // ==================== 6. 🔥 辅助方法（新增）====================
+    // ==================== 6. 🔥 辅助方法 ====================
 
     private String getTypeName(String type) {
         if (type == null) return "未知";

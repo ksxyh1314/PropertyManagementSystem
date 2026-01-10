@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 收费项目管理Servlet
+ * 收费项目管理Servlet（✅ 增加日志记录）
  */
 @WebServlet(urlPatterns = {"/admin/chargeItem", "/finance/chargeItem"})
 public class ChargeItemServlet extends BaseServlet {
@@ -203,7 +203,7 @@ public class ChargeItemServlet extends BaseServlet {
     }
 
     /**
-     * 添加收费项目
+     * 添加收费项目（✅ 增加日志记录）
      */
     public void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("========================================");
@@ -314,7 +314,8 @@ public class ChargeItemServlet extends BaseServlet {
 
         try {
             System.out.println("\n开始添加收费项目...");
-            boolean success = chargeItemService.addChargeItem(item);
+            // ✅ 调用 Service，传入 request 记录日志
+            boolean success = chargeItemService.addChargeItem(item, req);
 
             if (success) {
                 System.out.println("✅ 添加成功");
@@ -341,7 +342,7 @@ public class ChargeItemServlet extends BaseServlet {
     }
 
     /**
-     * 更新收费项目
+     * 更新收费项目（✅ 增加日志记录）
      */
     public void update(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("========================================");
@@ -453,7 +454,8 @@ public class ChargeItemServlet extends BaseServlet {
 
         try {
             System.out.println("\n开始更新收费项目...");
-            boolean success = chargeItemService.updateChargeItem(item);
+            // ✅ 调用 Service，传入 request 记录日志
+            boolean success = chargeItemService.updateChargeItem(item, req);
 
             if (success) {
                 System.out.println("✅ 更新成功");
@@ -480,7 +482,7 @@ public class ChargeItemServlet extends BaseServlet {
     }
 
     /**
-     * 删除收费项目
+     * 删除收费项目（✅ 增加日志记录）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("========================================");
@@ -501,7 +503,8 @@ public class ChargeItemServlet extends BaseServlet {
         }
 
         try {
-            boolean success = chargeItemService.deleteChargeItem(itemId);
+            // ✅ 调用 Service，传入 request 记录日志
+            boolean success = chargeItemService.deleteChargeItem(itemId, req);
 
             if (success) {
                 System.out.println("✅ 删除成功");
@@ -523,7 +526,7 @@ public class ChargeItemServlet extends BaseServlet {
     }
 
     /**
-     * 启用/禁用收费项目
+     * 启用/禁用收费项目（✅ 增加日志记录）
      */
     public void updateStatus(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         System.out.println("========================================");
@@ -555,7 +558,8 @@ public class ChargeItemServlet extends BaseServlet {
         }
 
         try {
-            boolean success = chargeItemService.updateStatus(itemId, status);
+            // ✅ 调用 Service，传入 request 记录日志
+            boolean success = chargeItemService.updateStatus(itemId, status, req);
 
             if (success) {
                 System.out.println("✅ 状态更新成功");

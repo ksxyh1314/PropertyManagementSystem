@@ -1266,39 +1266,7 @@
         });
     }
 
-    function loadChargeItems() {
-        console.log('📥 开始加载收费项目');
 
-        $.ajax({
-            url: '${pageContext.request.contextPath}/admin/chargeItem',
-            type: 'GET',
-            data: { method: 'findActive' },
-            dataType: 'json',
-            success: function(result) {
-                console.log('📦 收费项目响应:', result);
-
-                if (result.success && result.data) {
-                    var select = $('#itemFilter');
-                    select.find('option:not(:first)').remove();
-
-                    for (var i = 0; i < result.data.length; i++) {
-                        var item = result.data[i];
-                        var option = '<option value="' + item.itemId + '">' + item.itemName + '</option>';
-                        select.append(option);
-                    }
-
-                    console.log('✅ 收费项目加载完成,共 ' + result.data.length + ' 个');
-                } else {
-                    console.error('❌ 收费项目数据格式错误:', result);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('❌ 加载收费项目失败:', error);
-                console.error('响应状态:', xhr.status);
-                console.error('响应内容:', xhr.responseText);
-            }
-        });
-    }
 
     function toggleSelectAll() {
         var checked = $('#selectAll').prop('checked');

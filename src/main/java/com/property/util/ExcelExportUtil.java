@@ -1,9 +1,6 @@
 package com.property.util;
 
-import com.property.entity.FinanceStatistics;
-import com.property.entity.House;
-import com.property.entity.Owner;
-import com.property.entity.PaymentRecord;
+import com.property.entity.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -606,6 +603,218 @@ public class ExcelExportUtil {
         // 写入输出流
         workbook.write(outputStream);
         workbook.close();
+    }
+    /**
+     * 导出操作日志列表到Excel
+     *
+     * @param logs 操作日志列表
+     * @param outputStream 输出流
+     * @throws IOException IO异常
+     */
+    public static void exportOperationLogList(List<OperationLog> logs, OutputStream outputStream)
+            throws IOException {
+
+        // 创建新的工作簿
+        Workbook workbook = new XSSFWorkbook();
+
+        try {
+            Sheet sheet = workbook.createSheet("操作日志");
+
+            // 创建样式
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            // 创建表头
+            String[] headers = {
+                    "日志ID", "用户ID", "用户名", "操作类型",
+                    "操作描述", "IP地址", "操作时间"
+            };
+
+            Row headerRow = sheet.createRow(0);
+            headerRow.setHeightInPoints(25);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // 填充数据
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            int rowNum = 1;
+
+            for (OperationLog log : logs) {
+                Row row = sheet.createRow(rowNum++);
+                row.setHeightInPoints(20);
+
+                int colNum = 0;
+
+                // 日志ID
+                createCell(row, colNum++,
+                        log.getLogId() != null ? log.getLogId().toString() : "",
+                        dataStyle);
+
+                // 用户ID
+                createCell(row, colNum++,
+                        log.getUserId() != null ? log.getUserId().toString() : "",
+                        dataStyle);
+
+                // 用户名
+                createCell(row, colNum++, log.getUsername(), dataStyle);
+
+                // 操作类型（转换为中文）
+                createCell(row, colNum++,
+                        formatOperationType(log.getOperationType()),
+                        dataStyle);
+
+                // 操作描述
+                createCell(row, colNum++, log.getOperationDesc(), dataStyle);
+
+                // IP地址
+                createCell(row, colNum++, log.getIpAddress(), dataStyle);
+
+                // 操作时间
+                createCell(row, colNum++,
+                        log.getOperationTime() != null ?
+                                dateFormat.format(log.getOperationTime()) : "",
+                        dataStyle);
+            }
+
+            // 设置列宽
+            sheet.setColumnWidth(0, 3000);  // 日志ID
+            sheet.setColumnWidth(1, 3000);  // 用户ID
+            sheet.setColumnWidth(2, 4000);  // 用户名
+            sheet.setColumnWidth(3, 4000);  // 操作类型
+            sheet.setColumnWidth(4, 8000);  // 操作描述
+            sheet.setColumnWidth(5, 5000);  // IP地址
+            sheet.setColumnWidth(6, 6000);  // 操作时间
+
+            // 写入输出流
+            workbook.write(outputStream);
+            outputStream.flush();
+
+        } finally {
+            workbook.close();
+        }
+    }
+
+    /**
+     * 创建日期样式
+     */
+    private static CellStyle createDateStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+
+        // 设置边框
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+
+        // 设置对齐
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        // 设置日期格式
+        style.setDataFormat(workbook.createDataFormat().getFormat("yyyy-MM-dd HH:mm:ss"));
+
+        return style;
+    }
+
+    /**
+     * 格式化操作类型（转换为中文）
+     */
+    private static String formatOperationType(String operationType) {
+        if (operationType == null || operationType.trim().isEmpty()) {
+            return "";
+        }
+
+        switch (operationType) {
+            // 用户管理
+            case "login":
+                return "登录";
+            case "logout":
+                return "登出";
+            case "register":
+                return "注册";
+            case "change_password":
+                return "修改密码";
+
+            // 业主管理
+            case "owner_add":
+                return "添加业主";
+            case "owner_update":
+                return "修改业主";
+            case "owner_delete":
+                return "删除业主";
+
+            // 房屋管理
+            case "house_add":
+                return "添加房屋";
+            case "house_update":
+                return "修改房屋";
+            case "house_delete":
+                return "删除房屋";
+            case "house_assign":
+                return "分配业主";
+
+            // 缴费管理
+            case "payment_add":
+                return "添加缴费记录";
+            case "payment_update":
+                return "修改缴费记录";
+            case "payment_delete":
+                return "删除缴费记录";
+            case "payment_process":
+                return "处理缴费";
+            case "payment_generate":
+                return "生成账单";
+            case "payment_batch_delete":
+                return "批量删除";
+
+            // 报修管理
+            case "repair_submit":
+                return "提交报修";
+            case "repair_accept":
+                return "受理报修";
+            case "repair_complete":
+                return "完成报修";
+
+            // 公告管理
+            case "announcement_publish":
+                return "发布公告";
+            case "announcement_update":
+                return "修改公告";
+            case "announcement_delete":
+                return "删除公告";
+
+            // 投诉管理
+            case "complaint_submit":
+                return "提交投诉";
+            case "complaint_handle":
+                return "处理投诉";
+            case "complaint_close":
+                return "关闭投诉";
+
+            // 收费项目管理
+            case "charge_item_add":
+                return "添加收费项目";
+            case "charge_item_update":
+                return "修改收费项目";
+            case "charge_item_delete":
+                return "删除收费项目";
+
+            // 系统管理
+            case "system_config":
+                return "系统配置";
+            case "data_export":
+                return "数据导出";
+            case "data_import":
+                return "数据导入";
+
+            default:
+                return operationType;
+        }
     }
 
 }

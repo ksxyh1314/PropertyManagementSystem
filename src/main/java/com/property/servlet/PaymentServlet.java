@@ -16,10 +16,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * 缴费管理Servlet
+ * 缴费管理Servlet（增加日志记录）
  *
  * @author PropertyManagementSystem
- * @version 2.2 - 修复分页总数统计不一致问题
+ * @version 2.3 - 增加操作日志记录
  */
 @WebServlet("/payment")
 public class PaymentServlet extends BaseServlet {
@@ -42,7 +42,6 @@ public class PaymentServlet extends BaseServlet {
         try {
             PaymentRecord record = paymentService.findById(recordId);
             if (record != null) {
-                // ✅ 关键修复：获取收费项目的详细信息
                 Map<String, Object> detailInfo = paymentService.getPaymentDetailWithChargeItem(recordId);
 
                 if (detailInfo != null) {
@@ -61,8 +60,6 @@ public class PaymentServlet extends BaseServlet {
 
     /**
      * 分页查询缴费记录列表
-     * ✅ 已修复：当 total 为 0 但实际有数据时，从统计接口获取正确总数，解决分页消失问题
-     * ✅ 新增：支持按收费项目 itemId 筛选
      */
     public void list(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) {
@@ -73,7 +70,7 @@ public class PaymentServlet extends BaseServlet {
         int pageSize = getIntParameter(req, "pageSize", 10);
         String keyword = getStringParameter(req, "keyword");
         String status = getStringParameter(req, "status");
-        String itemId = getStringParameter(req, "itemId");  // ✅ 新增：收费项目ID
+        String itemId = getStringParameter(req, "itemId");
 
         logger.info("📥 收到查询请求: pageNum={}, pageSize={}, keyword={}, status={}, itemId={}",
                 pageNum, pageSize, keyword, status, itemId);
@@ -82,25 +79,21 @@ public class PaymentServlet extends BaseServlet {
             Map<String, Object> result;
             Map<String, Object> stats;
 
-            // ✅ 根据是否有 itemId 参数，调用不同的重载方法
             if (itemId != null && !itemId.trim().isEmpty()) {
-                // 调用支持 itemId 的重载方法
                 result = paymentService.findByPage(pageNum, pageSize, keyword, status, itemId);
-                stats = paymentService.getStatistics(keyword, null, itemId);  // 传入 null 获取全局统计
+                stats = paymentService.getStatistics(keyword, null, itemId);
                 logger.info("✅ 使用按项目筛选查询: itemId={}", itemId);
             } else {
-                // 调用原有方法（保持兼容）
                 result = paymentService.findByPage(pageNum, pageSize, keyword, status);
-                stats = paymentService.getStatistics(keyword, null);  // 传入 null 获取全局统计
+                stats = paymentService.getStatistics(keyword, null);
                 logger.info("✅ 使用常规查询（无项目筛选）");
             }
 
-            // ========== 🔥 核心修正逻辑：修正 total 值 ==========
+            // 修正 total 值
             if (stats != null) {
                 long realTotal = 0;
                 long currentTotal = Long.parseLong(String.valueOf(result.getOrDefault("total", 0)));
 
-                // 根据当前筛选的状态，从统计数据中取正确的值
                 if ("overdue".equals(status)) {
                     realTotal = Long.parseLong(String.valueOf(stats.getOrDefault("overdueCount", 0)));
                 } else if ("unpaid".equals(status)) {
@@ -108,27 +101,23 @@ public class PaymentServlet extends BaseServlet {
                 } else if ("paid".equals(status)) {
                     realTotal = Long.parseLong(String.valueOf(stats.getOrDefault("paidCount", 0)));
                 } else {
-                    // 没有状态筛选，取总数
                     Object totalRecords = stats.get("totalRecords");
                     if (totalRecords == null) {
-                        totalRecords = stats.get("totalCount");  // 兼容不同字段名
+                        totalRecords = stats.get("totalCount");
                     }
                     realTotal = Long.parseLong(String.valueOf(totalRecords != null ? totalRecords : 0));
                 }
 
-                // 🔥 核心修复逻辑：如果列表返回 total=0，但统计显示有数据，则强制覆盖
                 if (currentTotal == 0 && realTotal > 0) {
                     result.put("total", realTotal);
-                    // 重新计算总页数
                     int totalPages = (int) Math.ceil((double) realTotal / pageSize);
                     result.put("totalPages", totalPages);
-                    result.put("pages", totalPages);  // 兼容不同字段名
+                    result.put("pages", totalPages);
                     logger.info("✅ 已修正分页数据: status={}, itemId={}, 原total={}, 修正后total={}",
                             status, itemId, currentTotal, realTotal);
                 }
             }
 
-            // 添加统计数据到结果
             result.put("statistics", stats);
 
             logger.info("✅ 查询成功: total={}, pages={}", result.get("total"), result.get("pages"));
@@ -139,7 +128,6 @@ public class PaymentServlet extends BaseServlet {
             writeError(resp, "查询失败：" + e.getMessage());
         }
     }
-
 
     /**
      * 查询业主的缴费记录
@@ -152,7 +140,6 @@ public class PaymentServlet extends BaseServlet {
         User currentUser = getCurrentUser(req);
         String ownerId = getStringParameter(req, "ownerId");
 
-        // 如果是业主角色，只能查询自己的记录
         if ("owner".equals(currentUser.getUserRole())) {
             ownerId = currentUser.getUsername();
         }
@@ -247,7 +234,7 @@ public class PaymentServlet extends BaseServlet {
     }
 
     /**
-     * 添加缴费记录
+     * ✅ 添加缴费记录（增加日志记录）
      */
     public void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {
@@ -315,7 +302,8 @@ public class PaymentServlet extends BaseServlet {
         }
 
         try {
-            boolean success = paymentService.addPaymentRecord(record);
+            // ✅ 传递 request 用于记录日志
+            boolean success = paymentService.addPaymentRecord(record, req);
             if (success) {
                 writeSuccess(resp, "添加缴费记录成功", record.getRecordId());
             } else {
@@ -367,7 +355,7 @@ public class PaymentServlet extends BaseServlet {
     }
 
     /**
-     * 处理缴费（调用存储过程,自动计算滞纳金）
+     * ✅ 处理缴费（调用存储过程,自动计算滞纳金，增加日志记录）
      */
     public void pay(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkLogin(req, resp)) {
@@ -395,10 +383,12 @@ public class PaymentServlet extends BaseServlet {
         logger.info("========================================");
 
         try {
+            // ✅ 传递 request 用于记录日志
             Map<String, Object> result = paymentService.processPayment(
                     recordId,
                     paymentMethod,
-                    currentUser.getUserId()
+                    currentUser.getUserId(),
+                    req  // ✅ 传递请求对象
             );
 
             Boolean success = (Boolean) result.get("success");
@@ -426,7 +416,7 @@ public class PaymentServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 生成账单（已修复：增加 buildingId 和 houseIds 参数处理）
+     * ✅ 生成账单（增加日志记录）
      */
     public void generateBill(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         logger.info("========================================");
@@ -442,12 +432,9 @@ public class PaymentServlet extends BaseServlet {
         String billingPeriod = getStringParameter(req, "billingPeriod");
         String dueDateStr = getStringParameter(req, "dueDate");
 
-        // ✅ 新增：获取楼栋ID和房屋ID列表
         String buildingId = getStringParameter(req, "buildingId");
         String houseIds = getStringParameter(req, "houseIds");
 
-        // ✅ 关键修复：将空字符串转换为 null
-        // 前端传 "scope=all" 时 buildingId 为 ""，如果不转 null，Service层可能会查不到数据
         if (buildingId != null && buildingId.trim().isEmpty()) {
             buildingId = null;
         }
@@ -491,13 +478,14 @@ public class PaymentServlet extends BaseServlet {
         try {
             logger.info("\n开始生成账单...");
 
-            // ✅ 修复：调用包含 buildingId 和 houseIds 的 Service 方法
+            // ✅ 传递 request 用于记录日志
             Map<String, Object> result = paymentService.generateBillByChargeItem(
                     itemId,
                     billingPeriod,
                     dueDate,
-                    buildingId, // 传入楼栋ID
-                    houseIds    // 传入房屋ID列表
+                    buildingId,
+                    houseIds,
+                    req  // ✅ 传递请求对象
             );
 
             Boolean success = (Boolean) result.get("success");
@@ -575,14 +563,13 @@ public class PaymentServlet extends BaseServlet {
         try {
             String keyword = req.getParameter("keyword");
             String status = req.getParameter("status");
-            String itemId = req.getParameter("itemId");  // ✅ 新增
+            String itemId = req.getParameter("itemId");
 
             logger.info("=== 统计分析请求 ===");
             logger.info("关键词: {}", keyword);
             logger.info("状态: {}", status);
-            logger.info("项目ID: {}", itemId);  // ✅ 新增日志
+            logger.info("项目ID: {}", itemId);
 
-            // ✅ 调用支持 itemId 的统计方法
             Map<String, Object> statisticsData;
             if (itemId != null && !itemId.trim().isEmpty()) {
                 statisticsData = paymentService.getStatistics(keyword, status, itemId);
@@ -688,7 +675,7 @@ public class PaymentServlet extends BaseServlet {
     }
 
     /**
-     * 删除缴费记录
+     * ✅ 删除缴费记录（增加日志记录）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
@@ -702,7 +689,8 @@ public class PaymentServlet extends BaseServlet {
         }
 
         try {
-            boolean success = paymentService.deletePaymentRecord(recordId);
+            // ✅ 传递 request 用于记录日志
+            boolean success = paymentService.deletePaymentRecord(recordId, req);
             if (success) {
                 writeSuccess(resp, "删除成功", null);
             } else {
@@ -715,7 +703,7 @@ public class PaymentServlet extends BaseServlet {
     }
 
     /**
-     * 更新缴费记录
+     * ✅ 更新缴费记录（增加日志记录）
      */
     public void update(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {
@@ -771,7 +759,8 @@ public class PaymentServlet extends BaseServlet {
         }
 
         try {
-            boolean success = paymentService.updatePaymentRecord(record);
+            // ✅ 传递 request 用于记录日志
+            boolean success = paymentService.updatePaymentRecord(record, req);
             if (success) {
                 writeSuccess(resp, "更新成功", null);
             } else {
@@ -782,6 +771,7 @@ public class PaymentServlet extends BaseServlet {
             writeError(resp, "更新失败：" + e.getMessage());
         }
     }
+
     /**
      * ✅ 导出缴费记录到Excel（支持导出选中记录）
      */
@@ -795,12 +785,9 @@ public class PaymentServlet extends BaseServlet {
         OutputStream outputStream = null;
 
         try {
-            // 获取查询参数
             String keyword = getStringParameter(req, "keyword");
             String status = getStringParameter(req, "status");
             String itemId = getStringParameter(req, "itemId");
-
-            // ✅ 新增：获取选中的记录ID列表
             String recordIds = getStringParameter(req, "recordIds");
 
             logger.info("📥 开始导出缴费记录");
@@ -809,27 +796,12 @@ public class PaymentServlet extends BaseServlet {
 
             List<PaymentRecord> records;
 
-            // ✅ 判断是导出选中记录还是导出筛选结果
             if (recordIds != null && !recordIds.trim().isEmpty()) {
-                // 导出选中的记录
                 logger.info("📋 导出模式：选中记录");
-                records = new ArrayList<>();
-                String[] ids = recordIds.split(",");
-
-                for (String id : ids) {
-                    String trimmedId = id.trim();
-                    if (!trimmedId.isEmpty()) {
-                        PaymentRecord record = paymentService.findById(trimmedId);
-                        if (record != null) {
-                            records.add(record);
-                        }
-                    }
-                }
-
+                records = paymentService.findByIds(recordIds);
                 logger.info("✅ 查询到 {} 条选中记录", records.size());
 
             } else {
-                // 导出筛选结果
                 logger.info("📋 导出模式：筛选结果");
 
                 if (itemId != null && !itemId.trim().isEmpty()) {
@@ -841,7 +813,6 @@ public class PaymentServlet extends BaseServlet {
                 logger.info("✅ 查询到 {} 条筛选记录", records.size());
             }
 
-            // 检查数据是否为空
             if (records == null || records.isEmpty()) {
                 logger.warn("⚠️ 没有找到符合条件的记录");
                 resp.setContentType("text/html;charset=UTF-8");
@@ -851,7 +822,6 @@ public class PaymentServlet extends BaseServlet {
                 return;
             }
 
-            // 限制导出数量
             final int MAX_EXPORT_SIZE = 50000;
             if (records.size() > MAX_EXPORT_SIZE) {
                 resp.setContentType("text/html;charset=UTF-8");
@@ -862,7 +832,6 @@ public class PaymentServlet extends BaseServlet {
                 return;
             }
 
-            // 生成文件名
             String fileName;
             if (recordIds != null && !recordIds.trim().isEmpty()) {
                 fileName = "选中缴费记录_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".xlsx";
@@ -870,10 +839,8 @@ public class PaymentServlet extends BaseServlet {
                 fileName = generateExportFileName(status);
             }
 
-            // 设置响应头
             setExportResponseHeaders(resp, fileName);
 
-            // 导出Excel
             outputStream = resp.getOutputStream();
             ExcelExportUtil.exportPaymentRecordList(records, outputStream);
 
@@ -886,7 +853,6 @@ public class PaymentServlet extends BaseServlet {
             handleExportError(resp, outputStream, e);
         }
     }
-
 
     /**
      * 生成导出文件名
@@ -916,7 +882,6 @@ public class PaymentServlet extends BaseServlet {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("UTF-8");
 
-        // 处理中文文件名
         String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8")
                 .replaceAll("\\+", "%20");
 
@@ -924,7 +889,6 @@ public class PaymentServlet extends BaseServlet {
                 "attachment; filename=\"" + encodedFileName +
                         "\"; filename*=UTF-8''" + encodedFileName);
 
-        // 防止缓存
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
@@ -952,8 +916,9 @@ public class PaymentServlet extends BaseServlet {
                         "');history.back();</script>"
         );
     }
+
     /**
-     * ✅ 批量删除未缴费记录
+     * ✅ 批量删除未缴费记录（增加日志记录）
      */
     public void batchDelete(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -974,70 +939,23 @@ public class PaymentServlet extends BaseServlet {
         logger.info("========================================");
 
         try {
-            String[] ids = recordIds.split(",");
-            int successCount = 0;
-            int failCount = 0;
-            List<String> errorMessages = new ArrayList<>();
+            // ✅ 传递 request 用于记录日志
+            Map<String, Object> result = paymentService.batchDeleteUnpaidRecords(recordIds, req);
 
-            for (String id : ids) {
-                String trimmedId = id.trim();
-                if (trimmedId.isEmpty()) {
-                    continue;
-                }
-
-                try {
-                    // 检查记录是否存在
-                    PaymentRecord record = paymentService.findById(trimmedId);
-                    if (record == null) {
-                        failCount++;
-                        errorMessages.add(trimmedId + ": 记录不存在");
-                        logger.warn("记录不存在: {}", trimmedId);
-                        continue;
-                    }
-
-                    // 检查是否已缴费
-                    if ("paid".equals(record.getPaymentStatus())) {
-                        failCount++;
-                        errorMessages.add(trimmedId + ": 已缴费记录不能删除");
-                        logger.warn("已缴费记录不能删除: {}", trimmedId);
-                        continue;
-                    }
-
-                    // 执行删除
-                    if (paymentService.deletePaymentRecord(trimmedId)) {
-                        successCount++;
-                        logger.info("✅ 删除成功: {}", trimmedId);
-                    } else {
-                        failCount++;
-                        errorMessages.add(trimmedId + ": 删除失败");
-                        logger.error("❌ 删除失败: {}", trimmedId);
-                    }
-
-                } catch (Exception e) {
-                    failCount++;
-                    String errorMsg = trimmedId + ": " + e.getMessage();
-                    errorMessages.add(errorMsg);
-                    logger.error("❌ 删除异常: {}", trimmedId, e);
-                }
-            }
-
-            // 构建返回结果
-            Map<String, Object> result = new HashMap<>();
-            result.put("successCount", successCount);
-            result.put("failCount", failCount);
-            result.put("errorMessages", errorMessages);
+            Boolean success = (Boolean) result.get("success");
+            String message = (String) result.get("message");
+            Integer successCount = (Integer) result.get("successCount");
+            Integer failCount = (Integer) result.get("failCount");
 
             logger.info("========================================");
             logger.info("【批量删除】完成");
             logger.info("成功: {}, 失败: {}", successCount, failCount);
             logger.info("========================================");
 
-            if (successCount > 0) {
-                String message = String.format("删除完成！成功: %d 条, 失败: %d 条",
-                        successCount, failCount);
+            if (success != null && success) {
                 writeSuccess(resp, message, result);
             } else {
-                writeError(resp, "删除失败，请检查选中的记录");
+                writeError(resp, message);
             }
 
         } catch (Exception e) {
@@ -1045,5 +963,4 @@ public class PaymentServlet extends BaseServlet {
             writeError(resp, "批量删除失败：" + e.getMessage());
         }
     }
-
 }

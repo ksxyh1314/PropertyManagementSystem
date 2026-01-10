@@ -2,16 +2,18 @@ package com.property.service;
 
 import com.property.dao.ChargeItemDao;
 import com.property.entity.ChargeItem;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 收费项目服务类
+ * 收费项目服务类（✅ 增加日志记录）
  */
 public class ChargeItemService {
     private static final Logger logger = LoggerFactory.getLogger(ChargeItemService.class);
@@ -63,9 +65,16 @@ public class ChargeItemService {
     }
 
     /**
-     * 添加收费项目
+     * 添加收费项目（支持不传 request）
      */
     public boolean addChargeItem(ChargeItem item) {
+        return addChargeItem(item, null);
+    }
+
+    /**
+     * 添加收费项目（✅ 增加日志记录）
+     */
+    public boolean addChargeItem(ChargeItem item, HttpServletRequest request) {
         // 参数验证
         validateChargeItem(item);
 
@@ -88,15 +97,34 @@ public class ChargeItemService {
         int rows = chargeItemDao.insert(item);
         if (rows > 0) {
             logger.info("添加收费项目成功：{} - {}", item.getItemId(), item.getItemName());
+
+            // ✅ 记录日志
+            if (request != null) {
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "charge_item_add",
+                        "添加收费项目：" + item.getItemName() + "（" + item.getItemId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * 更新收费项目
+     * 更新收费项目（支持不传 request）
      */
     public boolean updateChargeItem(ChargeItem item) {
+        return updateChargeItem(item, null);
+    }
+
+    /**
+     * 更新收费项目（✅ 增加日志记录）
+     */
+    public boolean updateChargeItem(ChargeItem item, HttpServletRequest request) {
         if (item.getItemId() == null || item.getItemId().trim().isEmpty()) {
             throw new IllegalArgumentException("项目ID不能为空");
         }
@@ -113,31 +141,73 @@ public class ChargeItemService {
         int rows = chargeItemDao.update(item);
         if (rows > 0) {
             logger.info("更新收费项目成功：{}", item.getItemId());
+
+            // ✅ 记录日志
+            if (request != null) {
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "charge_item_update",
+                        "修改收费项目：" + item.getItemName() + "（" + item.getItemId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * 删除收费项目
+     * 删除收费项目（支持不传 request）
      */
     public boolean deleteChargeItem(String itemId) {
+        return deleteChargeItem(itemId, null);
+    }
+
+    /**
+     * 删除收费项目（✅ 增加日志记录）
+     */
+    public boolean deleteChargeItem(String itemId, HttpServletRequest request) {
         if (itemId == null || itemId.trim().isEmpty()) {
             throw new IllegalArgumentException("项目ID不能为空");
         }
 
+        // 查询项目信息（用于日志）
+        ChargeItem item = chargeItemDao.findById(itemId);
+        String itemName = item != null ? item.getItemName() : "未知";
+
         int rows = chargeItemDao.delete(itemId);
         if (rows > 0) {
             logger.info("删除收费项目成功：{}", itemId);
+
+            // ✅ 记录日志
+            if (request != null) {
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "charge_item_delete",
+                        "删除收费项目：" + itemName + "（" + itemId + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
     /**
-     * 启用/禁用收费项目
+     * 启用/禁用收费项目（支持不传 request）
      */
     public boolean updateStatus(String itemId, Integer status) {
+        return updateStatus(itemId, status, null);
+    }
+
+    /**
+     * 启用/禁用收费项目（✅ 增加日志记录）
+     */
+    public boolean updateStatus(String itemId, Integer status, HttpServletRequest request) {
         if (itemId == null || itemId.trim().isEmpty()) {
             throw new IllegalArgumentException("项目ID不能为空");
         }
@@ -145,9 +215,26 @@ public class ChargeItemService {
             throw new IllegalArgumentException("状态值无效");
         }
 
+        // 查询项目信息（用于日志）
+        ChargeItem item = chargeItemDao.findById(itemId);
+        String itemName = item != null ? item.getItemName() : "未知";
+
         int rows = chargeItemDao.updateStatus(itemId, status);
         if (rows > 0) {
             logger.info("更新收费项目状态成功：项目ID={}, 状态={}", itemId, status);
+
+            // ✅ 记录日志
+            if (request != null) {
+                String statusDesc = status == 1 ? "启用" : "禁用";
+                LogUtil.log(
+                        getUserId(request),
+                        getUsername(request),
+                        "charge_item_status",
+                        statusDesc + "收费项目：" + itemName + "（" + itemId + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
@@ -243,5 +330,35 @@ public class ChargeItemService {
         }
 
         logger.info("收费项目验证通过：{} - {}", item.getItemId(), item.getItemName());
+    }
+
+    // ========== 辅助方法 ==========
+
+    /**
+     * 从 Session 获取当前用户ID
+     */
+    private Integer getUserId(HttpServletRequest request) {
+        if (request == null) return 0;
+        try {
+            Object userId = request.getSession(false) != null ?
+                    request.getSession(false).getAttribute("userId") : null;
+            return userId != null ? (Integer) userId : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 从 Session 获取当前用户名
+     */
+    private String getUsername(HttpServletRequest request) {
+        if (request == null) return "system";
+        try {
+            Object username = request.getSession(false) != null ?
+                    request.getSession(false).getAttribute("username") : null;
+            return username != null ? username.toString() : "system";
+        } catch (Exception e) {
+            return "system";
+        }
     }
 }

@@ -62,20 +62,25 @@
             border-bottom: 2px solid #dee2e6;
             color: #495057;
             font-weight: 600;
-            padding: 15px;
+            padding: 15px 10px;
             white-space: nowrap;
+            font-size: 14px;
         }
 
         .table tbody td {
-            padding: 12px 15px;
+            padding: 12px 10px;
             vertical-align: middle;
+            font-size: 14px;
         }
 
+        /* 🔥 状态徽章样式优化 */
         .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
+            display: inline-block;
+            white-space: nowrap;
         }
 
         .status-vacant {
@@ -93,10 +98,47 @@
             color: #f57c00;
         }
 
+        /* 🔥 销售状态徽章 */
+        .sale-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-left: 5px;
+            display: inline-block;
+        }
+
+        .sale-for_sale {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .sale-sold {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .sale-leased {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        /* 🔥 操作按钮优化 */
         .btn-action {
             margin: 2px;
-            padding: 5px 12px;
-            font-size: 13px;
+            padding: 4px 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .btn-action i {
+            margin-right: 3px;
+        }
+
+        /* 🔥 操作列宽度固定 */
+        .action-column {
+            width: 280px;
+            min-width: 280px;
         }
 
         .pagination-wrapper {
@@ -116,6 +158,7 @@
             font-weight: 600;
             color: #495057;
             margin-bottom: 8px;
+            font-size: 14px;
         }
 
         .required::after {
@@ -135,7 +178,7 @@
             cursor: pointer;
         }
 
-        /* 按钮组样式 */
+        /* 🔥 按钮组样式优化 */
         .btn-group-custom {
             display: flex;
             gap: 10px;
@@ -151,6 +194,8 @@
         .btn-export:hover {
             background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
             color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 87, 108, 0.3);
         }
 
         /* 🔥 搜索提示样式 */
@@ -168,7 +213,7 @@
             font-size: 13px;
         }
 
-        /* 🔥 自定义可搜索下拉框样式（美化版） */
+        /* 🔥 业主搜索框样式 */
         .owner-select-wrapper {
             position: relative;
         }
@@ -179,7 +224,7 @@
             border: 1px solid #ced4da;
             border-radius: 0.25rem;
             font-size: 14px;
-            transition: border-color 0.15s ease-in-out;
+            transition: all 0.3s;
         }
 
         .owner-search-input:focus {
@@ -212,7 +257,7 @@
             padding: 10px 12px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
 
         .owner-dropdown-item:hover {
@@ -234,7 +279,6 @@
             color: #999;
         }
 
-        /* 🔥 美化业主信息显示 */
         .owner-info-name {
             font-weight: 600;
             color: #333;
@@ -277,7 +321,6 @@
             color: rgba(255,255,255,0.8);
         }
 
-        /* 🔥 清除按钮样式 */
         .clear-owner-btn {
             position: absolute;
             right: 35px;
@@ -304,7 +347,6 @@
             display: block;
         }
 
-        /* 🔥 下拉箭头图标 */
         .owner-dropdown-arrow {
             position: absolute;
             right: 10px;
@@ -314,6 +356,74 @@
             pointer-events: none;
             font-size: 14px;
         }
+
+        /* 🔥 表格滚动优化 */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        /* 🔥 加载动画 */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .loading-spinner i {
+            font-size: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 🔥 空状态样式 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+        /* 🔥 分页样式优化 */
+        .pagination .page-link {
+            color: #667eea;
+            border-color: #dee2e6;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .pagination .page-link:hover {
+            color: #764ba2;
+            background-color: #f8f9fa;
+        }
+
+        /* 🔥 响应式优化 */
+        @media (max-width: 768px) {
+            .page-header h2 {
+                font-size: 22px;
+            }
+
+            .btn-action {
+                padding: 3px 8px;
+                font-size: 11px;
+            }
+
+            .action-column {
+                width: auto;
+                min-width: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -322,41 +432,51 @@
     <!-- 页面标题 -->
     <div class="page-header">
         <h2><i class="fas fa-building"></i> 房屋管理</h2>
-        <p>管理小区房屋信息,包括添加、编辑、删除和分配业主</p>
+        <p>管理小区房屋信息，包括添加、编辑、删除和分配业主</p>
     </div>
 
     <!-- 搜索和操作区 -->
     <div class="search-box">
+        <!-- 🔥 搜索条件区 -->
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-md-3 mb-2">
                 <input type="text" class="form-control" id="searchKeyword"
                        placeholder="搜索房屋编号/楼栋/业主">
-                <!-- 🔥 搜索提示 -->
                 <small class="search-hint">
                     <i class="fas fa-lightbulb"></i>
                     支持：1栋、2单元、5楼、姓名、电话
                 </small>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 mb-2">
                 <select class="form-control" id="searchStatus">
-                    <option value="">全部状态</option>
+                    <option value="">全部入住状态</option>
                     <option value="vacant">空置</option>
                     <option value="occupied">已入住</option>
                     <option value="rented">出租</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <!-- 🔥 新增：销售状态筛选 -->
+            <div class="col-md-2 mb-2">
+                <select class="form-control" id="searchSaleStatus">
+                    <option value="">全部销售状态</option>
+                    <option value="for_sale">待售</option>
+                    <option value="sold">已售</option>
+                    <option value="leased">已租</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
                 <button class="btn btn-primary btn-block" onclick="loadHouseList(1)">
                     <i class="fas fa-search"></i> 搜索
                 </button>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 mb-2">
                 <button class="btn btn-secondary btn-block" onclick="resetSearch()">
                     <i class="fas fa-redo"></i> 重置
                 </button>
             </div>
         </div>
 
+        <!-- 🔥 操作按钮区（添加房屋移到这里） -->
         <div class="row">
             <div class="col-md-12">
                 <div class="btn-group-custom">
@@ -395,13 +515,14 @@
                     <th>业主</th>
                     <th>联系电话</th>
                     <th>状态</th>
-                    <th width="250">操作</th>
+                    <th class="action-column">操作</th>
                 </tr>
                 </thead>
                 <tbody id="houseTableBody">
                 <tr>
-                    <td colspan="11" class="text-center">
-                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    <td colspan="11" class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p class="mt-2">加载中...</p>
                     </td>
                 </tr>
                 </tbody>
@@ -411,13 +532,13 @@
 
     <!-- 分页 -->
     <div class="pagination-wrapper">
-        <div class="row">
+        <div class="row align-items-center">
             <div class="col-md-6">
                 <div id="pageInfo">共 0 条记录</div>
             </div>
             <div class="col-md-6">
                 <nav>
-                    <ul class="pagination justify-content-end" id="pagination">
+                    <ul class="pagination justify-content-end mb-0" id="pagination">
                     </ul>
                 </nav>
             </div>
@@ -430,7 +551,9 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">添加房屋</h5>
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-home"></i> 添加房屋
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
@@ -539,11 +662,9 @@
                                            id="ownerSearchInput"
                                            placeholder="输入姓名、电话或业主ID搜索..."
                                            autocomplete="off">
-                                    <!-- 🔥 清除按钮 -->
                                     <button type="button" class="clear-owner-btn" id="clearOwnerBtn" title="清除选择">
                                         <i class="fas fa-times-circle"></i>
                                     </button>
-                                    <!-- 🔥 下拉箭头 -->
                                     <span class="owner-dropdown-arrow">
                                         <i class="fas fa-chevron-down"></i>
                                     </span>
@@ -558,8 +679,120 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="saveHouse()">保存</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveHouse()">
+                    <i class="fas fa-save"></i> 保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 出售房屋模态框 -->
+<div class="modal fade" id="sellModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-dollar-sign"></i> 出售房屋
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sellHouseId">
+                <input type="hidden" id="sellSelectedOwnerId">
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    选择业主后，房屋将自动标记为<strong>【已售 + 已入住】</strong>状态
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">选择业主</label>
+                    <div class="owner-select-wrapper">
+                        <input type="text"
+                               class="form-control owner-search-input"
+                               id="sellOwnerSearchInput"
+                               placeholder="输入姓名、电话或业主ID搜索..."
+                               autocomplete="off">
+                        <button type="button" class="clear-owner-btn" id="clearSellOwnerBtn" title="清除选择">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                        <span class="owner-dropdown-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </span>
+                        <div class="owner-dropdown" id="sellOwnerDropdown"></div>
+                    </div>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-lightbulb"></i> 可输入姓名、电话或业主ID搜索
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmSell()">
+                    <i class="fas fa-check"></i> 确定出售
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 出租房屋模态框 -->
+<div class="modal fade" id="leaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-key"></i> 出租房屋
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="leaseHouseId">
+                <input type="hidden" id="leaseSelectedOwnerId">
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    选择租户后，房屋将自动标记为<strong>【已租 + 出租中】</strong>状态
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">选择租户</label>
+                    <div class="owner-select-wrapper">
+                        <input type="text"
+                               class="form-control owner-search-input"
+                               id="leaseOwnerSearchInput"
+                               placeholder="输入姓名、电话或租户ID搜索..."
+                               autocomplete="off">
+                        <button type="button" class="clear-owner-btn" id="clearLeaseOwnerBtn" title="清除选择">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                        <span class="owner-dropdown-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </span>
+                        <div class="owner-dropdown" id="leaseOwnerDropdown"></div>
+                    </div>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-lightbulb"></i> 可输入姓名、电话或租户ID搜索
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" class="btn btn-info" onclick="confirmLease()">
+                    <i class="fas fa-check"></i> 确定出租
+                </button>
             </div>
         </div>
     </div>
@@ -570,7 +803,9 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">分配业主</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus"></i> 分配业主
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
@@ -586,11 +821,9 @@
                                id="assignOwnerSearchInput"
                                placeholder="输入姓名、电话或业主ID搜索..."
                                autocomplete="off">
-                        <!-- 🔥 清除按钮 -->
                         <button type="button" class="clear-owner-btn" id="clearAssignOwnerBtn" title="清除选择">
                             <i class="fas fa-times-circle"></i>
                         </button>
-                        <!-- 🔥 下拉箭头 -->
                         <span class="owner-dropdown-arrow">
                             <i class="fas fa-chevron-down"></i>
                         </span>
@@ -602,8 +835,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="confirmAssignOwner()">确定</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmAssignOwner()">
+                    <i class="fas fa-check"></i> 确定
+                </button>
             </div>
         </div>
     </div>
@@ -612,7 +849,6 @@
 <!-- 引入 JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // 如果 jQuery 加载失败，使用备用源
     if (typeof jQuery == 'undefined') {
         document.write('<script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"><\/script>');
     }
@@ -624,27 +860,26 @@
     var currentPage = 1;
     var pageSize = 10;
     var totalCount = 0;
-    var allOwners = []; // 存储所有业主数据
-    var allHouses = []; // 🔥 新增：存储所有房屋数据（用于前端过滤）
+    var allOwners = [];
+    var allHouses = [];
 
-    // 页面加载完成后执行
     $(document).ready(function() {
         console.log('房屋管理页面加载完成');
         loadHouseList(1);
         loadOwnerList();
 
-        // 回车搜索
         $('#searchKeyword').keypress(function(e) {
             if (e.which == 13) {
                 loadHouseList(1);
             }
         });
 
-        // 🔥 初始化业主搜索框
+        // 🔥 初始化所有业主搜索框
         initOwnerSearch('ownerSearchInput', 'ownerDropdown', 'selectedOwnerId', 'clearOwnerBtn');
         initOwnerSearch('assignOwnerSearchInput', 'assignOwnerDropdown', 'assignSelectedOwnerId', 'clearAssignOwnerBtn');
+        initOwnerSearch('sellOwnerSearchInput', 'sellOwnerDropdown', 'sellSelectedOwnerId', 'clearSellOwnerBtn');
+        initOwnerSearch('leaseOwnerSearchInput', 'leaseOwnerDropdown', 'leaseSelectedOwnerId', 'clearLeaseOwnerBtn');
 
-        // 点击页面其他地方关闭下拉框
         $(document).click(function(e) {
             if (!$(e.target).closest('.owner-select-wrapper').length) {
                 $('.owner-dropdown').removeClass('show');
@@ -652,62 +887,233 @@
         });
     });
 
-    /**
-     * 🔥 智能解析搜索关键词（完整版）
-     */
     function parseSearchKeyword(keyword) {
         if (!keyword) return {type: 'all', value: '', display: ''};
-
         keyword = keyword.trim();
 
-        // 匹配 "数字+栋" 格式 → 楼栋号
         var buildingMatch = keyword.match(/^(\d+)栋$/);
         if (buildingMatch) {
             var num = parseInt(buildingMatch[1]);
             var value = num < 10 ? '0' + num : num.toString();
-            return {
-                type: 'building',
-                value: value,
-                display: value + '栋'
-            };
+            return {type: 'building', value: value, display: value + '栋'};
         }
 
-        // 匹配 "数字+单元" 格式 → 单元号
         var unitMatch = keyword.match(/^(\d+)单元$/);
         if (unitMatch) {
-            return {
-                type: 'unit',
-                value: unitMatch[1],
-                display: unitMatch[1] + '单元'
-            };
+            return {type: 'unit', value: unitMatch[1], display: unitMatch[1] + '单元'};
         }
 
-        // 匹配 "数字+楼" 或 "数字+层" 格式 → 楼层
         var floorMatch = keyword.match(/^(\d+)[楼层]$/);
         if (floorMatch) {
             var num = parseInt(floorMatch[1]);
             var value = num < 10 ? '0' + num : num.toString();
-            return {
-                type: 'floor',
-                value: value,
-                display: value + '楼'
-            };
+            return {type: 'floor', value: value, display: value + '楼'};
         }
 
-        // 其他情况：全字段模糊搜索
         return {type: 'all', value: keyword, display: keyword};
     }
 
     /**
-     * 🔥 前端精确过滤房屋数据
+     * 🔥 显示出售模态框
      */
+    function showSellModal(houseId) {
+        $('#sellHouseId').val(houseId);
+        $('#sellOwnerSearchInput').val('');
+        $('#sellSelectedOwnerId').val('');
+        $('#clearSellOwnerBtn').removeClass('show');
+        $('#sellOwnerDropdown').removeClass('show');
+        $('#sellModal').modal('show');
+    }
+
+    /**
+     * 🔥 确认出售
+     */
+    function confirmSell() {
+        var houseId = $('#sellHouseId').val();
+        var ownerId = $('#sellSelectedOwnerId').val();
+
+        if (!ownerId) {
+            layer.msg('请选择业主', {icon: 0});
+            return;
+        }
+
+        var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
+        $.ajax({
+            url: '${pageContext.request.contextPath}/admin/house',
+            type: 'POST',
+            data: {
+                method: 'markAsSold',
+                houseId: houseId,
+                ownerId: ownerId
+            },
+            success: function(response) {
+                layer.close(loadingIndex);
+                if (response.success) {
+                    layer.msg('✅ 房屋已成功出售，状态已自动更新为【已售+已入住】', {icon: 1, time: 2000});
+                    $('#sellModal').modal('hide');
+                    refreshData();
+                } else {
+                    layer.msg(response.message || '出售失败', {icon: 2});
+                }
+            },
+            error: function() {
+                layer.close(loadingIndex);
+                layer.msg('网络错误', {icon: 2});
+            }
+        });
+    }
+
+    /**
+     * 🔥 显示出租模态框
+     */
+    function showLeaseModal(houseId) {
+        $('#leaseHouseId').val(houseId);
+        $('#leaseOwnerSearchInput').val('');
+        $('#leaseSelectedOwnerId').val('');
+        $('#clearLeaseOwnerBtn').removeClass('show');
+        $('#leaseOwnerDropdown').removeClass('show');
+        $('#leaseModal').modal('show');
+    }
+
+    /**
+     * 🔥 确认出租
+     */
+    function confirmLease() {
+        var houseId = $('#leaseHouseId').val();
+        var ownerId = $('#leaseSelectedOwnerId').val();
+
+        if (!ownerId) {
+            layer.msg('请选择租户', {icon: 0});
+            return;
+        }
+
+        var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
+        $.ajax({
+            url: '${pageContext.request.contextPath}/admin/house',
+            type: 'POST',
+            data: {
+                method: 'markAsLeased',
+                houseId: houseId,
+                ownerId: ownerId
+            },
+            success: function(response) {
+                layer.close(loadingIndex);
+                if (response.success) {
+                    layer.msg('✅ 房屋已成功出租，状态已自动更新为【已租+出租中】', {icon: 1, time: 2000});
+                    $('#leaseModal').modal('hide');
+                    refreshData();
+                } else {
+                    layer.msg(response.message || '出租失败', {icon: 2});
+                }
+            },
+            error: function() {
+                layer.close(loadingIndex);
+                layer.msg('网络错误', {icon: 2});
+            }
+        });
+    }
+
+    /**
+     * 🔥 取消出售
+     */
+    function cancelSale(houseId) {
+        layer.confirm(
+            '<div style="padding: 10px;">' +
+            '<div style="font-size: 16px; margin-bottom: 10px;"><i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> 确认取消出售</div>' +
+            '<div style="color: #666; line-height: 1.6;">' +
+            '确定要取消此房屋的出售状态吗？<br>' +
+            '<span style="color: #dc3545; font-weight: 600;">房屋将重新标记为"待售"状态，业主关联将被清除。</span>' +
+            '</div>' +
+            '</div>',
+            {
+                icon: 0,
+                title: false,
+                closeBtn: 1,
+                btn: ['<i class="fas fa-check"></i> 确定', '<i class="fas fa-times"></i> 取消']
+            },
+            function(index) {
+                var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
+                $.ajax({
+                    url: '${pageContext.request.contextPath}/admin/house',
+                    type: 'POST',
+                    data: {
+                        method: 'markAsForSale',
+                        houseId: houseId
+                    },
+                    success: function(response) {
+                        layer.close(loadingIndex);
+                        if (response.success) {
+                            layer.msg('✅ 已取消出售，房屋状态已恢复为【待售+空置】', {icon: 1});
+                            refreshData();
+                        } else {
+                            layer.msg(response.message || '操作失败', {icon: 2});
+                        }
+                    },
+                    error: function() {
+                        layer.close(loadingIndex);
+                        layer.msg('网络错误', {icon: 2});
+                    }
+                });
+                layer.close(index);
+            }
+        );
+    }
+
+    /**
+     * 🔥 取消出租
+     */
+    function cancelLease(houseId) {
+        layer.confirm(
+            '<div style="padding: 10px;">' +
+            '<div style="font-size: 16px; margin-bottom: 10px;"><i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> 确认取消出租</div>' +
+            '<div style="color: #666; line-height: 1.6;">' +
+            '确定要取消此房屋的出租状态吗？<br>' +
+            '<span style="color: #dc3545; font-weight: 600;">房屋将重新标记为"待售"状态，租户关联将被清除。</span>' +
+            '</div>' +
+            '</div>',
+            {
+                icon: 0,
+                title: false,
+                closeBtn: 1,
+                btn: ['<i class="fas fa-check"></i> 确定', '<i class="fas fa-times"></i> 取消']
+            },
+            function(index) {
+                var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
+                $.ajax({
+                    url: '${pageContext.request.contextPath}/admin/house',
+                    type: 'POST',
+                    data: {
+                        method: 'markAsForSale',
+                        houseId: houseId
+                    },
+                    success: function(response) {
+                        layer.close(loadingIndex);
+                        if (response.success) {
+                            layer.msg('✅ 已取消出租，房屋状态已恢复为【待售+空置】', {icon: 1});
+                            refreshData();
+                        } else {
+                            layer.msg(response.message || '操作失败', {icon: 2});
+                        }
+                    },
+                    error: function() {
+                        layer.close(loadingIndex);
+                        layer.msg('网络错误', {icon: 2});
+                    }
+                });
+                layer.close(index);
+            }
+        );
+    }
+
     function filterHousesByKeyword(houses, keyword) {
         if (!keyword) return houses;
-
         var parsed = parseSearchKeyword(keyword);
 
         if (parsed.type === 'all') {
-            // 全字段模糊搜索
             var lowerKeyword = parsed.value.toLowerCase();
             return houses.filter(function(house) {
                 return (house.houseId && house.houseId.toLowerCase().indexOf(lowerKeyword) !== -1) ||
@@ -719,24 +1125,16 @@
             });
         }
 
-        // 精确字段匹配
         return houses.filter(function(house) {
             switch(parsed.type) {
-                case 'building':
-                    return house.buildingNo === parsed.value;
-                case 'unit':
-                    return house.unitNo === parsed.value;
-                case 'floor':
-                    return house.floor === parsed.value;
-                default:
-                    return true;
+                case 'building': return house.buildingNo === parsed.value;
+                case 'unit': return house.unitNo === parsed.value;
+                case 'floor': return house.floor === parsed.value;
+                default: return true;
             }
         });
     }
 
-    /**
-     * 🔥 按状态过滤房屋
-     */
     function filterHousesByStatus(houses, status) {
         if (!status) return houses;
         return houses.filter(function(house) {
@@ -744,109 +1142,107 @@
         });
     }
 
-    /**
-     * 🔥 加载房屋列表（完整优化版 - 纯前端过滤）
-     */
+    // 🔥 新增：按销售状态过滤
+    function filterHousesBySaleStatus(houses, saleStatus) {
+        if (!saleStatus) return houses;
+        return houses.filter(function(house) {
+            return house.saleStatus === saleStatus;
+        });
+    }
+
     function loadHouseList(pageNum) {
         currentPage = pageNum;
         var keyword = $('#searchKeyword').val();
         var status = $('#searchStatus').val();
+        var saleStatus = $('#searchSaleStatus').val();
 
-        // 解析关键词
-        var parsed = parseSearchKeyword(keyword);
+        $('#houseTableBody').html(
+            '<tr><td colspan="11" class="loading-spinner">' +
+            '<i class="fas fa-spinner fa-spin"></i><p class="mt-2">加载中...</p>' +
+            '</td></tr>'
+        );
 
-        // 显示解析提示
-        if (keyword && parsed.type !== 'all') {
-            console.log('🔍 搜索解析: "' + keyword + '" → ' + parsed.type + ': "' + parsed.value + '"');
-        }
-
-        $('#houseTableBody').html('<tr><td colspan="11" class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr>');
-
-        // 🔥 如果已有缓存数据且只是翻页，直接使用缓存
         if (allHouses.length > 0 && pageNum > 1) {
-            processHouseData(allHouses, keyword, status, pageNum);
+            processHouseData(allHouses, keyword, status, saleStatus, pageNum);
             return;
         }
 
-        // 🔥 从后端获取所有数据（不带过滤条件）
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/house',
             type: 'GET',
             data: {
                 method: 'list',
                 pageNum: 1,
-                pageSize: 9999,  // 🔥 获取所有数据
-                keyword: '',     // 🔥 不传关键词
-                status: ''       // 🔥 不传状态
+                pageSize: 9999,
+                keyword: '',
+                status: ''
             },
             success: function(response) {
-                console.log('✅ 后端返回数据:', response);
                 if (response.success) {
-                    allHouses = response.data.list || [];  // 🔥 缓存所有数据
-                    processHouseData(allHouses, keyword, status, pageNum);
+                    allHouses = response.data.list || [];
+                    processHouseData(allHouses, keyword, status, saleStatus, pageNum);
                 } else {
                     layer.msg(response.message || '加载失败', {icon: 2});
-                    $('#houseTableBody').html('<tr><td colspan="11" class="text-center text-danger">加载失败</td></tr>');
+                    $('#houseTableBody').html(
+                        '<tr><td colspan="11" class="empty-state">' +
+                        '<i class="fas fa-exclamation-circle"></i>' +
+                        '<p>加载失败</p>' +
+                        '</td></tr>'
+                    );
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('❌ 请求失败:', error);
+            error: function() {
                 layer.msg('网络错误', {icon: 2});
-                $('#houseTableBody').html('<tr><td colspan="11" class="text-center text-danger">网络错误</td></tr>');
+                $('#houseTableBody').html(
+                    '<tr><td colspan="11" class="empty-state">' +
+                    '<i class="fas fa-wifi"></i>' +
+                    '<p>网络错误</p>' +
+                    '</td></tr>'
+                );
             }
         });
     }
 
-    /**
-     * 🔥 处理房屋数据（过滤 + 分页）
-     */
-    function processHouseData(houses, keyword, status, pageNum) {
-        // 1. 按关键词过滤
+    function processHouseData(houses, keyword, status, saleStatus, pageNum) {
         var filteredHouses = filterHousesByKeyword(houses, keyword);
-
-        // 2. 按状态过滤
         filteredHouses = filterHousesByStatus(filteredHouses, status);
-
-        // 3. 计算总数
+        filteredHouses = filterHousesBySaleStatus(filteredHouses, saleStatus);
         totalCount = filteredHouses.length;
 
-        // 4. 前端分页
         var start = (pageNum - 1) * pageSize;
         var end = start + pageSize;
         var pagedHouses = filteredHouses.slice(start, end);
 
-        // 5. 渲染表格
         renderHouseTable(pagedHouses);
         renderPagination();
 
-        // 6. 显示搜索结果提示
         if (keyword && totalCount === 0) {
             var parsed = parseSearchKeyword(keyword);
             layer.msg('未找到 "' + parsed.display + '" 的相关房屋', {icon: 0, time: 2000});
         }
-
-        console.log('📊 过滤结果: 共 ' + totalCount + ' 条，当前显示第 ' + pageNum + ' 页');
     }
 
-    /**
-     * 渲染房屋表格
-     */
+    // 🔥 修改：根据 sale_status 显示不同按钮
     function renderHouseTable(houses) {
         var tbody = $('#houseTableBody');
         tbody.empty();
 
         if (!houses || houses.length === 0) {
             tbody.append(
-                '<tr><td colspan="11" class="text-center text-muted"><i class="fas fa-inbox"></i> 暂无数据</td></tr>'
+                '<tr><td colspan="11" class="empty-state">' +
+                '<i class="fas fa-inbox"></i>' +
+                '<p class="mt-2">暂无数据</p>' +
+                '</td></tr>'
             );
             return;
         }
 
         for (var i = 0; i < houses.length; i++) {
             var house = houses[i];
+
+            // 🔥 房屋状态
             var statusClass = '';
             var statusText = '';
-
             switch (house.houseStatus) {
                 case 'vacant':
                     statusClass = 'status-vacant';
@@ -864,9 +1260,63 @@
                     statusText = '未知';
             }
 
+            // 🔥 销售状态
+            var saleClass = '';
+            var saleText = '';
+            switch (house.saleStatus) {
+                case 'for_sale':
+                    saleClass = 'sale-for_sale';
+                    saleText = '待售';
+                    break;
+                case 'sold':
+                    saleClass = 'sale-sold';
+                    saleText = '已售';
+                    break;
+                case 'leased':
+                    saleClass = 'sale-leased';
+                    saleText = '已租';
+                    break;
+            }
+
             var ownerInfo = house.ownerName || '-';
             var phoneInfo = house.ownerPhone || '-';
-            var layoutInfo = house.layout || '-';
+
+            // 🔥 根据 sale_status 显示不同的操作按钮
+            var actionButtons = '';
+
+            if (house.saleStatus === 'for_sale') {
+                // 待售状态：显示"出售"和"出租"按钮
+                actionButtons += '<button class="btn btn-sm btn-success btn-action" onclick="showSellModal(\'' + house.houseId + '\')" title="出售">' +
+                    '<i class="fas fa-dollar-sign"></i> 出售' +
+                    '</button>';
+                actionButtons += '<button class="btn btn-sm btn-info btn-action" onclick="showLeaseModal(\'' + house.houseId + '\')" title="出租">' +
+                    '<i class="fas fa-key"></i> 出租' +
+                    '</button>';
+            } else if (house.saleStatus === 'sold') {
+                // 已售状态：显示"已售"标签和"取消出售"按钮
+                actionButtons += '<span class="badge badge-success mr-1" style="font-size: 11px;">✓ 已售</span>';
+                actionButtons += '<button class="btn btn-sm btn-warning btn-action" onclick="cancelSale(\'' + house.houseId + '\')" title="取消出售">' +
+                    '<i class="fas fa-undo"></i> 取消' +
+                    '</button>';
+            } else if (house.saleStatus === 'leased') {
+                // 已租状态：显示"已租"标签和"取消出租"按钮
+                actionButtons += '<span class="badge badge-info mr-1" style="font-size: 11px;">✓ 已租</span>';
+                actionButtons += '<button class="btn btn-sm btn-warning btn-action" onclick="cancelLease(\'' + house.houseId + '\')" title="取消出租">' +
+                    '<i class="fas fa-undo"></i> 取消' +
+                    '</button>';
+            }
+
+            // 通用操作按钮
+            actionButtons += '<button class="btn btn-sm btn-primary btn-action" onclick="showEditModal(\'' + house.houseId + '\')" title="编辑">' +
+                '<i class="fas fa-edit"></i> 编辑' +
+                '</button>';
+
+            // 🔥 只有待售状态才能删除
+            if (house.saleStatus === 'for_sale') {
+                actionButtons += '<button class="btn btn-sm btn-danger btn-action" onclick="deleteHouse(\'' + house.houseId + '\')" title="删除">' +
+                    '<i class="fas fa-trash"></i> 删除' +
+                    '</button>';
+            }
 
             tbody.append(
                 '<tr>' +
@@ -876,29 +1326,19 @@
                 '<td>' + (house.unitNo || '-') + '</td>' +
                 '<td>' + (house.floor || '-') + '</td>' +
                 '<td>' + (house.area || '-') + '</td>' +
-                '<td>' + layoutInfo + '</td>' +
+                '<td>' + (house.layout || '-') + '</td>' +
                 '<td>' + ownerInfo + '</td>' +
                 '<td>' + phoneInfo + '</td>' +
-                '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
                 '<td>' +
-                '<button class="btn btn-sm btn-info btn-action" onclick="showEditModal(\'' + house.houseId + '\')" title="编辑">' +
-                '<i class="fas fa-edit"></i> 编辑' +
-                '</button>' +
-                '<button class="btn btn-sm btn-warning btn-action" onclick="showAssignOwnerModal(\'' + house.houseId + '\')" title="分配业主">' +
-                '<i class="fas fa-user-plus"></i> 分配' +
-                '</button>' +
-                '<button class="btn btn-sm btn-danger btn-action" onclick="deleteHouse(\'' + house.houseId + '\')" title="删除">' +
-                '<i class="fas fa-trash"></i> 删除' +
-                '</button>' +
+                '<span class="status-badge ' + statusClass + '">' + statusText + '</span>' +
+                (saleText ? '<span class="sale-badge ' + saleClass + '">' + saleText + '</span>' : '') +
                 '</td>' +
+                '<td class="action-column">' + actionButtons + '</td>' +
                 '</tr>'
             );
         }
     }
 
-    /**
-     * 渲染分页
-     */
     function renderPagination() {
         var totalPages = Math.ceil(totalCount / pageSize);
         $('#pageInfo').text('共 ' + totalCount + ' 条记录');
@@ -908,7 +1348,6 @@
 
         if (totalPages <= 1) return;
 
-        // 上一页
         var prevDisabled = currentPage === 1 ? 'disabled' : '';
         pagination.append(
             '<li class="page-item ' + prevDisabled + '">' +
@@ -916,7 +1355,6 @@
             '</li>'
         );
 
-        // 页码
         var startPage = Math.max(1, currentPage - 2);
         var endPage = Math.min(totalPages, currentPage + 2);
 
@@ -943,7 +1381,6 @@
             pagination.append('<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadHouseList(' + totalPages + ')">' + totalPages + '</a></li>');
         }
 
-        // 下一页
         var nextDisabled = currentPage === totalPages ? 'disabled' : '';
         pagination.append(
             '<li class="page-item ' + nextDisabled + '">' +
@@ -952,64 +1389,44 @@
         );
     }
 
-    /**
-     * 全选/取消全选
-     */
     function toggleCheckAll() {
         var checked = $('#checkAll').prop('checked');
         $('.row-checkbox').prop('checked', checked);
     }
 
-    /**
-     * 🔥 重置搜索（清空缓存）
-     */
     function resetSearch() {
         $('#searchKeyword').val('');
         $('#searchStatus').val('');
-        allHouses = [];  // 🔥 清空缓存，强制重新加载
+        $('#searchSaleStatus').val('');
+        allHouses = [];
         loadHouseList(1);
     }
 
-    /**
-     * 🔥 刷新数据（清空缓存）
-     */
     function refreshData() {
-        allHouses = [];  // 🔥 清空缓存
+        allHouses = [];
         loadHouseList(currentPage);
     }
 
-    /**
-     * 显示添加模态框
-     */
     function showAddModal() {
-        $('#modalTitle').text('添加房屋');
+        $('#modalTitle').html('<i class="fas fa-home"></i> 添加房屋');
         $('#formMethod').val('add');
         $('#houseForm')[0].reset();
         $('#houseId').prop('readonly', false);
-
-        // 🔥 重置业主选择
         $('#ownerSearchInput').val('');
         $('#selectedOwnerId').val('');
         $('#clearOwnerBtn').removeClass('show');
         $('#ownerDropdown').removeClass('show');
-
         $('#houseModal').modal('show');
     }
 
-    /**
-     * 显示编辑模态框
-     */
     function showEditModal(houseId) {
-        $('#modalTitle').text('编辑房屋');
+        $('#modalTitle').html('<i class="fas fa-edit"></i> 编辑房屋');
         $('#formMethod').val('update');
 
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/house',
             type: 'GET',
-            data: {
-                method: 'findById',
-                houseId: houseId
-            },
+            data: {method: 'findById', houseId: houseId},
             success: function(response) {
                 if (response.success && response.data) {
                     var house = response.data;
@@ -1024,7 +1441,6 @@
                     $('#houseStatus').val(house.houseStatus);
                     $('#saleStatus').val(house.saleStatus);
 
-                    // 🔥 设置业主
                     if (house.ownerId && house.ownerName) {
                         $('#ownerSearchInput').val(house.ownerName + ' - ' + house.ownerPhone);
                         $('#selectedOwnerId').val(house.ownerId);
@@ -1046,9 +1462,6 @@
         });
     }
 
-    /**
-     * 保存房屋
-     */
     function saveHouse() {
         var method = $('#formMethod').val();
         var formData = {
@@ -1065,60 +1478,59 @@
             ownerId: $('#selectedOwnerId').val() || ''
         };
 
-        // 表单验证
         if (!formData.houseId || !formData.buildingNo || !formData.unitNo ||
             !formData.floor || !formData.layout || !formData.area || !formData.pricePerSqm) {
             layer.msg('请填写所有必填项', {icon: 0});
             return;
         }
 
+        var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/house',
             type: 'POST',
             data: formData,
             success: function(response) {
+                layer.close(loadingIndex);
                 if (response.success) {
                     layer.msg(response.message || '保存成功', {icon: 1});
                     $('#houseModal').modal('hide');
-                    refreshData();  // 🔥 刷新数据
+                    refreshData();
                 } else {
                     layer.msg(response.message || '保存失败', {icon: 2});
                 }
             },
             error: function() {
+                layer.close(loadingIndex);
                 layer.msg('网络错误', {icon: 2});
             }
         });
     }
 
-    /**
-     * 删除房屋
-     */
     function deleteHouse(houseId) {
         layer.confirm('确定要删除该房屋吗？<br><small class="text-danger">注意：只有无任何关联记录（缴费、报修）的房屋才能被删除。</small>', {
             icon: 3,
             title: '确认删除'
         }, function(index) {
+            var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
             $.ajax({
                 url: '${pageContext.request.contextPath}/admin/house',
                 type: 'POST',
-                data: {
-                    method: 'delete',
-                    houseId: houseId
-                },
+                data: {method: 'delete', houseId: houseId},
                 success: function(response) {
+                    layer.close(loadingIndex);
                     if (response.success) {
                         layer.msg('删除成功', {icon: 1});
-                        refreshData();  // 🔥 刷新数据
+                        refreshData();
                     } else {
                         layer.alert(response.message || '删除失败', {
                             icon: 2,
-                            title: '无法删除',
-                            closeBtn: 0
+                            title: '无法删除'
                         });
                     }
                 },
                 error: function() {
+                    layer.close(loadingIndex);
                     layer.msg('网络错误', {icon: 2});
                 }
             });
@@ -1126,9 +1538,6 @@
         });
     }
 
-    /**
-     * 批量删除
-     */
     function batchDelete() {
         var checkedBoxes = $('.row-checkbox:checked');
         if (checkedBoxes.length === 0) {
@@ -1141,7 +1550,7 @@
             ids.push($(this).val());
         });
 
-        layer.confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？<br><small class="text-muted">系统将自动跳过包含历史数据的房屋。</small>', {
+        layer.confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？', {
             icon: 3,
             title: '确认批量删除'
         }, function(index) {
@@ -1151,15 +1560,11 @@
             var completed = 0;
             var errorDetails = [];
 
-            // 逐个删除
             $.each(ids, function(i, id) {
                 $.ajax({
                     url: '${pageContext.request.contextPath}/admin/house',
                     type: 'POST',
-                    data: {
-                        method: 'delete',
-                        houseId: id
-                    },
+                    data: {method: 'delete', houseId: id},
                     success: function(response) {
                         if (response.success) {
                             deleteCount++;
@@ -1176,51 +1581,35 @@
                         completed++;
                         if (completed === ids.length) {
                             layer.close(loading);
-
                             if (failCount > 0) {
-                                var reportHtml = '<div style="text-align: left;">' +
-                                    '<p class="text-success"><i class="fas fa-check-circle"></i> 成功删除: ' + deleteCount + ' 条</p>' +
-                                    '<p class="text-danger"><i class="fas fa-times-circle"></i> 删除失败: ' + failCount + ' 条</p>' +
-                                    '<hr>' +
-                                    '<div style="max-height: 150px; overflow-y: auto; font-size: 13px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 4px;">' +
-                                    errorDetails.join('<br>') +
-                                    '</div>' +
-                                    '</div>';
-
-                                layer.alert(reportHtml, {
-                                    icon: 2,
-                                    title: '批量删除结果',
-                                    area: ['450px', 'auto']
-                                });
+                                layer.alert(
+                                    '<p class="text-success">成功删除: ' + deleteCount + ' 条</p>' +
+                                    '<p class="text-danger">删除失败: ' + failCount + ' 条</p>' +
+                                    '<hr><div style="max-height: 150px; overflow-y: auto;">' +
+                                    errorDetails.join('<br>') + '</div>',
+                                    {icon: 2, title: '批量删除结果'}
+                                );
                             } else {
                                 layer.msg('全部删除成功', {icon: 1});
                             }
-
                             $('#checkAll').prop('checked', false);
-                            refreshData();  // 🔥 刷新数据
+                            refreshData();
                         }
                     }
                 });
             });
-
             layer.close(index);
         });
     }
 
-    /**
-     * 🔥 初始化业主搜索框
-     */
     function initOwnerSearch(inputId, dropdownId, hiddenInputId, clearBtnId) {
         var $input = $('#' + inputId);
         var $dropdown = $('#' + dropdownId);
         var $hiddenInput = $('#' + hiddenInputId);
         var $clearBtn = $('#' + clearBtnId);
 
-        // 输入事件
         $input.on('input', function() {
             var keyword = $(this).val().trim().toLowerCase();
-
-            // 显示/隐藏清除按钮
             if (keyword !== '') {
                 $clearBtn.addClass('show');
             } else {
@@ -1239,20 +1628,13 @@
             }
         });
 
-        // 获得焦点时显示下拉框
         $input.on('focus', function() {
             if (allOwners.length > 0) {
-                var keyword = $(this).val().trim();
-                if (keyword === '') {
-                    renderOwnerDropdown(allOwners, dropdownId, inputId, hiddenInputId, clearBtnId);
-                } else {
-                    $input.trigger('input');
-                }
+                $input.trigger('input');
                 $dropdown.addClass('show');
             }
         });
 
-        // 清除按钮
         $clearBtn.on('click', function(e) {
             e.stopPropagation();
             $input.val('');
@@ -1261,18 +1643,8 @@
             $dropdown.removeClass('show');
             $input.focus();
         });
-
-        // 点击输入框区域显示下拉框
-        $('.owner-select-wrapper').on('click', function(e) {
-            if (!$(e.target).hasClass('clear-owner-btn') && !$(e.target).closest('.clear-owner-btn').length) {
-                $input.focus();
-            }
-        });
     }
 
-    /**
-     * 🔥 渲染业主下拉列表（美化版）
-     */
     function renderOwnerDropdown(owners, dropdownId, inputId, hiddenInputId, clearBtnId) {
         var $dropdown = $('#' + dropdownId);
         $dropdown.empty();
@@ -1280,8 +1652,7 @@
         if (owners.length === 0) {
             $dropdown.html(
                 '<div class="owner-dropdown-empty">' +
-                '<i class="fas fa-inbox"></i> 未找到匹配的业主<br>' +
-                '<small style="color: #999; margin-top: 5px; display: block;">试试输入：姓名、电话或业主ID</small>' +
+                '<i class="fas fa-inbox"></i> 未找到匹配的业主' +
                 '</div>'
             );
             $dropdown.addClass('show');
@@ -1314,44 +1685,29 @@
         $dropdown.addClass('show');
     }
 
-    /**
-     * 🔥 加载业主列表
-     */
     function loadOwnerList() {
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/house',
             type: 'GET',
-            data: { method: 'owners' },
+            data: {method: 'owners'},
             success: function(response) {
                 if (response.success && response.data) {
                     allOwners = response.data;
                     console.log('✅ 业主列表加载完成，共 ' + allOwners.length + ' 个业主');
                 }
-            },
-            error: function() {
-                console.error('❌ 加载业主列表失败');
             }
         });
     }
 
-    /**
-     * 显示分配业主模态框
-     */
     function showAssignOwnerModal(houseId) {
         $('#assignHouseId').val(houseId);
-
-        // 🔥 重置业主选择
         $('#assignOwnerSearchInput').val('');
         $('#assignSelectedOwnerId').val('');
         $('#clearAssignOwnerBtn').removeClass('show');
         $('#assignOwnerDropdown').removeClass('show');
-
         $('#assignOwnerModal').modal('show');
     }
 
-    /**
-     * 确认分配业主
-     */
     function confirmAssignOwner() {
         var houseId = $('#assignHouseId').val();
         var ownerId = $('#assignSelectedOwnerId').val();
@@ -1361,67 +1717,56 @@
             return;
         }
 
+        var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
+
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/house',
             type: 'POST',
-            data: {
-                method: 'assignOwner',
-                houseId: houseId,
-                ownerId: ownerId
-            },
+            data: {method: 'assignOwner', houseId: houseId, ownerId: ownerId},
             success: function(response) {
+                layer.close(loadingIndex);
                 if (response.success) {
                     layer.msg('分配成功', {icon: 1});
                     $('#assignOwnerModal').modal('hide');
-                    refreshData();  // 🔥 刷新数据
+                    refreshData();
                 } else {
                     layer.msg(response.message || '分配失败', {icon: 2});
                 }
             },
             error: function() {
+                layer.close(loadingIndex);
                 layer.msg('网络错误', {icon: 2});
             }
         });
     }
 
-    /**
-     * 导出当前筛选条件的数据
-     */
     function exportAllData() {
         var keyword = $('#searchKeyword').val();
         var status = $('#searchStatus').val();
-
-        var url = '${pageContext.request.contextPath}/export/house?method=export&exportType=all';
-        if (keyword) {
-            url += '&keyword=' + encodeURIComponent(keyword);
-        }
-        if (status) {
-            url += '&status=' + encodeURIComponent(status);
-        }
-
+        var saleStatus = $('#searchSaleStatus').val();
+        var url = '${pageContext.request.contextPath}/admin/house?method=export';
+        if (keyword) url += '&keyword=' + encodeURIComponent(keyword);
+        if (status) url += '&status=' + encodeURIComponent(status);
+        if (saleStatus) url += '&saleStatus=' + encodeURIComponent(saleStatus);
         window.location.href = url;
-        layer.msg('正在导出数据，请稍候...', {icon: 16, time: 2000});
+        layer.msg('正在导出数据...', {icon: 16, time: 2000});
     }
 
-    /**
-     * 导出选中的数据
-     */
     function exportSelectedData() {
         var checkedBoxes = $('.row-checkbox:checked');
         if (checkedBoxes.length === 0) {
             layer.msg('请先选择要导出的数据', {icon: 0});
             return;
         }
-
         var ids = [];
         checkedBoxes.each(function() {
             ids.push($(this).val());
         });
-
-        var url = '${pageContext.request.contextPath}/export/house?method=export&exportType=selected&selectedIds=' + ids.join(',');
+        var url = '${pageContext.request.contextPath}/admin/house?method=exportSelected&ids=' + ids.join(',');
         window.location.href = url;
-        layer.msg('正在导出选中数据，请稍候...', {icon: 16, time: 2000});
+        layer.msg('正在导出选中数据...', {icon: 16, time: 2000});
     }
 </script>
 </body>
 </html>
+

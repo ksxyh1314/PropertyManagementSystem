@@ -2135,41 +2135,90 @@
 
     function printReceipt() {
         var printContent = $('.receipt-container').html();
-        var printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>打印收据</title>');
+        var printWindow = window.open('', '_blank', 'width=800,height=600');
+
+        printWindow.document.write('<!DOCTYPE html>');
+        printWindow.document.write('<html><head>');
+        printWindow.document.write('<meta charset="UTF-8">');
+        printWindow.document.write('<title>打印收据 - ' + $('#receiptNo').text() + '</title>');
+
+        // ========== 完整样式 ==========
         printWindow.document.write('<style>');
-        printWindow.document.write('body { font-family: "Microsoft YaHei", Arial, sans-serif; padding: 20px; }');
-        printWindow.document.write('.receipt-container { max-width: 800px; margin: 0 auto; }');
+        printWindow.document.write('* { margin: 0; padding: 0; box-sizing: border-box; }');
+        printWindow.document.write('body { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; padding: 20px; background: white; }');
+        printWindow.document.write('.receipt-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; }');
+
+        // 收据头部
         printWindow.document.write('.receipt-header { text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 20px; margin-bottom: 20px; }');
-        printWindow.document.write('.receipt-title { color: #667eea; font-weight: bold; font-size: 24px; margin-bottom: 10px; }');
+        printWindow.document.write('.receipt-title { color: #667eea; font-weight: bold; font-size: 28px; margin-bottom: 10px; }');
         printWindow.document.write('.receipt-subtitle { color: #666; font-size: 14px; }');
-        printWindow.document.write('.receipt-no-box { background: #667eea; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }');
-        printWindow.document.write('.receipt-no-label { font-size: 12px; opacity: 0.9; }');
+
+        // 收据编号
+        printWindow.document.write('.receipt-no-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }');
+        printWindow.document.write('.receipt-no-label { font-size: 12px; opacity: 0.9; margin-bottom: 5px; }');
         printWindow.document.write('.receipt-no-value { font-size: 24px; font-weight: bold; letter-spacing: 2px; margin-top: 5px; }');
+
+        // 信息项
         printWindow.document.write('.info-item { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 10px; }');
-        printWindow.document.write('.info-label { color: #666; font-size: 12px; margin-bottom: 5px; }');
-        printWindow.document.write('.info-value { font-size: 16px; font-weight: 600; color: #333; }');
-        printWindow.document.write('.amount-box { background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }');
+        printWindow.document.write('.info-label { color: #666; font-size: 12px; margin-bottom: 5px; display: block; }');
+        printWindow.document.write('.info-value { font-size: 16px; font-weight: 600; color: #333; display: block; }');
+
+        // 金额区域
+        printWindow.document.write('.amount-box { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 8px; margin: 20px 0; }');
         printWindow.document.write('.amount-item { text-align: center; }');
-        printWindow.document.write('.amount-label { color: #666; font-size: 12px; margin-bottom: 5px; }');
-        printWindow.document.write('.amount-value { font-size: 20px; font-weight: bold; }');
+        printWindow.document.write('.amount-label { color: #666; font-size: 12px; margin-bottom: 5px; display: block; }');
+        printWindow.document.write('.amount-value { font-size: 20px; font-weight: bold; display: block; margin-top: 5px; }');
+
+        // 页脚
         printWindow.document.write('.receipt-footer { border-top: 2px dashed #ddd; padding-top: 20px; margin-top: 20px; }');
-        printWindow.document.write('.receipt-footer-text { color: #666; font-size: 12px; }');
-        printWindow.document.write('.row { display: flex; margin: 0 -15px; }');
-        printWindow.document.write('.col-4, .col-6 { flex: 0 0 auto; padding: 0 15px; }');
+        printWindow.document.write('.receipt-footer-text { color: #666; font-size: 12px; line-height: 1.8; }');
+
+        // 栅格系统
+        printWindow.document.write('.row { display: flex; flex-wrap: wrap; margin: 0 -15px; }');
+        printWindow.document.write('.row::after { content: ""; display: table; clear: both; }');
+        printWindow.document.write('.col-4, .col-6, .col-md-6 { flex: 0 0 auto; padding: 0 15px; }');
         printWindow.document.write('.col-4 { width: 33.333%; }');
-        printWindow.document.write('.col-6 { width: 50%; }');
+        printWindow.document.write('.col-6, .col-md-6 { width: 50%; }');
         printWindow.document.write('.text-right { text-align: right; }');
+        printWindow.document.write('.mb-3 { margin-bottom: 1rem; }');
+
+        // 图标（使用文字代替）
+        printWindow.document.write('.fas { font-style: normal; margin-right: 5px; }');
+        printWindow.document.write('.fa-file-invoice-dollar::before { content: "📄"; }');
+        printWindow.document.write('.fa-user::before { content: "👤"; }');
+        printWindow.document.write('.fa-home::before { content: "🏠"; }');
+        printWindow.document.write('.fa-list-alt::before { content: "📋"; }');
+        printWindow.document.write('.fa-calendar-alt::before { content: "📅"; }');
+        printWindow.document.write('.fa-credit-card::before { content: "💳"; }');
+        printWindow.document.write('.fa-clock::before { content: "🕐"; }');
+        printWindow.document.write('.fa-check-circle::before { content: "✅"; }');
+
+        // 打印样式
+        printWindow.document.write('@media print {');
+        printWindow.document.write('  body { padding: 0; }');
+        printWindow.document.write('  .receipt-container { box-shadow: none; }');
+        printWindow.document.write('  @page { margin: 1cm; }');
+        printWindow.document.write('}');
+
         printWindow.document.write('</style>');
         printWindow.document.write('</head><body>');
-        printWindow.document.write('<div class="receipt-container">' + printContent + '</div>');
+        printWindow.document.write('<div class="receipt-container">');
+        printWindow.document.write(printContent);
+        printWindow.document.write('</div>');
         printWindow.document.write('</body></html>');
+
         printWindow.document.close();
 
-        setTimeout(function() {
-            printWindow.print();
-        }, 250);
+        // 等待内容加载完成后打印
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.print();
+                // 打印完成后关闭窗口（可选）
+                // printWindow.close();
+            }, 500);
+        };
     }
+
 
     function exportExcel() {
         var keyword = $('#searchKeyword').val();

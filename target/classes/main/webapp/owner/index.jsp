@@ -11,63 +11,313 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <style>
-        body { background-color: #f5f7fa; font-family: 'Microsoft YaHei', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
 
         /* 导航栏 */
-        .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.05); background: #fff; }
-        .navbar-brand { font-weight: bold; color: #667eea !important; }
+        .navbar {
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            background: #fff;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
         /* 顶部欢迎区 */
         .welcome-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; padding: 30px 0; margin-bottom: 30px;
-            border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -5%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        .welcome-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -3%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        .welcome-section .container {
+            position: relative;
+            z-index: 1;
         }
 
         /* 卡片通用样式 */
         .card-box {
-            background: #fff; border-radius: 10px; border: none;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.03); margin-bottom: 25px;
-            transition: transform 0.2s;
+            background: #fff;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
         }
-        .card-box:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .card-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+        }
         .card-header {
-            background: transparent; border-bottom: 1px solid #f0f0f0;
-            font-weight: bold; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #e9ecef;
+            font-weight: bold;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0 !important;
         }
 
         /* 统计小卡片 */
-        .stat-card { display: flex; align-items: center; padding: 20px; }
-        .stat-icon {
-            width: 50px; height: 50px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; margin-right: 15px; color: white;
+        .stat-card {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            cursor: pointer;
         }
-        .bg-orange { background: linear-gradient(45deg, #ff9966, #ff5e62); }
-        .bg-blue { background: linear-gradient(45deg, #56ccf2, #2f80ed); }
-        .bg-green { background: linear-gradient(45deg, #11998e, #38ef7d); }
-        .bg-purple { background: linear-gradient(45deg, #834d9b, #d04ed6); }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+        .bg-orange { background: linear-gradient(135deg, #ff9966, #ff5e62); }
+        .bg-blue { background: linear-gradient(135deg, #56ccf2, #2f80ed); }
+        .bg-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .bg-purple { background: linear-gradient(135deg, #834d9b, #d04ed6); }
 
-        .stat-info h3 { margin: 0; font-weight: bold; color: #333; }
-        .stat-info p { margin: 0; color: #888; font-size: 13px; }
+        .stat-info h3 {
+            margin: 0;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-info p {
+            margin: 0;
+            color: #888;
+            font-size: 13px;
+        }
 
         /* 表格样式 */
-        .table thead th { border-top: none; border-bottom: 2px solid #eee; color: #666; font-weight: 600; }
-        .table td { vertical-align: middle; }
+        .table thead th {
+            border-top: none;
+            border-bottom: 2px solid #e9ecef;
+            color: #666;
+            font-weight: 600;
+            background: #f8f9fa;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .table-hover tbody tr:hover {
+            background: #f8f9fa;
+        }
 
         /* 公告列表 */
-        .notice-list .list-group-item { border: none; border-bottom: 1px dashed #eee; padding: 12px 0; }
-        .notice-list .list-group-item:last-child { border-bottom: none; }
-        .notice-badge { font-size: 12px; padding: 3px 8px; border-radius: 4px; margin-right: 8px; }
+        .notice-list .list-group-item {
+            border: none;
+            border-bottom: 1px dashed #e9ecef;
+            padding: 12px 0;
+            transition: all 0.2s;
+        }
+        .notice-list .list-group-item:hover {
+            background: #f8f9fa;
+            padding-left: 10px;
+            border-left: 3px solid #667eea;
+        }
+        .notice-list .list-group-item:last-child {
+            border-bottom: none;
+        }
+        .notice-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            margin-right: 8px;
+            font-weight: 600;
+        }
 
         /* 个人信息 */
-        .profile-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
-        .profile-label { color: #888; }
-        .profile-val { font-weight: 600; color: #333; }
+        .profile-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+        .profile-row:hover {
+            background: #f8f9fa;
+            padding-left: 10px;
+            padding-right: 10px;
+            margin-left: -10px;
+            margin-right: -10px;
+            border-radius: 8px;
+        }
+        .profile-row:last-child {
+            border-bottom: none;
+        }
+        .profile-label {
+            color: #888;
+            font-size: 13px;
+            flex-shrink: 0;
+            width: 100px;
+        }
+        .profile-val {
+            font-weight: 600;
+            color: #333;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        /* 房屋卡片样式 */
+        .house-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        }
+        .house-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 15px rgba(102, 126, 234, 0.2);
+            transform: translateX(5px);
+            background: #fff;
+        }
+        .house-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .house-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .house-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
 
         /* 快捷服务图标 */
-        .service-icon { cursor: pointer; transition: transform 0.2s; }
-        .service-icon:hover { transform: scale(1.1); }
+        .service-icon {
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .service-icon:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-decoration: none;
+        }
+        .service-icon:hover .h4,
+        .service-icon:hover .small {
+            color: white !important;
+        }
+
+        /* Tab 样式 */
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            border-color: transparent;
+            color: #667eea;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: transparent;
+            font-weight: 600;
+        }
+
+        /* 按钮美化 */
+        .btn-light {
+            background: white;
+            border: 2px solid white;
+        }
+        .btn-light:hover {
+            background: rgba(255,255,255,0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-outline-light:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+
+        /* 徽章美化 */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* 模态框美化 */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            border: none;
+        }
+        .modal-header .close {
+            color: white;
+            opacity: 0.8;
+        }
+        .modal-header .close:hover {
+            opacity: 1;
+        }
+
+        /* 加载动画 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -90,7 +340,7 @@
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                        <img src="https://ui-avatars.com/api/?name=${sessionScope.user.realName}&background=random" class="rounded-circle mr-1" width="30">
+                        <img src="https://ui-avatars.com/api/?name=${sessionScope.user.realName}&background=667eea&color=fff" class="rounded-circle mr-1" width="30">
                         ${sessionScope.user.realName}
                     </a>
                     <div class="dropdown-menu dropdown-menu-right">
@@ -101,7 +351,6 @@
                         <a class="dropdown-item" href="${pageContext.request.contextPath}/login?action=logout">
                             <i class="fas fa-sign-out-alt mr-2"></i>退出登录
                         </a>
-
                     </div>
                 </li>
             </ul>
@@ -114,8 +363,8 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h2 class="mb-2">欢迎回家,${sessionScope.user.realName} 👋</h2>
-                <p class="mb-0 opacity-80">今天是 <span id="currentDate"></span>,祝您生活愉快!</p>
+                <h2 class="mb-2"><i class="fas fa-hand-peace mr-2"></i>欢迎回家，${sessionScope.user.realName}</h2>
+                <p class="mb-0 opacity-80">今天是 <span id="currentDate"></span>，祝您生活愉快！</p>
             </div>
             <div class="col-md-4 text-right d-none d-md-block">
                 <button class="btn btn-light text-primary font-weight-bold shadow-sm" onclick="location.href='payment.jsp'">
@@ -129,7 +378,7 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container pb-4">
     <!-- 1. 核心数据统计卡片 -->
     <div class="row">
         <div class="col-md-3 col-sm-6">
@@ -177,11 +426,13 @@
             <div class="card-box">
                 <div class="card-header">
                     <span><i class="fas fa-bullhorn text-primary mr-2"></i>最新社区公告</span>
-                    <a href="announcement.jsp" class="small text-muted">查看全部 ></a>
+                    <a href="announcement.jsp" class="small text-primary font-weight-bold">查看全部 <i class="fas fa-arrow-right ml-1"></i></a>
                 </div>
                 <div class="card-body pt-0">
                     <div class="list-group notice-list" id="noticeList">
-                        <div class="text-center py-3 text-muted small">加载中...</div>
+                        <div class="text-center py-3 text-muted small">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -190,7 +441,7 @@
             <div class="card-box">
                 <div class="card-header">
                     <span><i class="fas fa-file-invoice-dollar text-warning mr-2"></i>待缴费账单</span>
-                    <a href="payment.jsp" class="small text-muted">去缴费 ></a>
+                    <a href="payment.jsp" class="small text-primary font-weight-bold">去缴费 <i class="fas fa-arrow-right ml-1"></i></a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -206,7 +457,9 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr><td colspan="6" class="text-center text-muted small py-3">加载中...</td></tr>
+                            <tr><td colspan="6" class="text-center text-muted small py-3">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                            </td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -218,10 +471,14 @@
                 <div class="card-header border-0 pb-0">
                     <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="repair-tab" data-toggle="tab" href="#repair" role="tab"><i class="fas fa-wrench mr-1"></i>最近报修</a>
+                            <a class="nav-link active" id="repair-tab" data-toggle="tab" href="#repair" role="tab">
+                                <i class="fas fa-wrench mr-1"></i>最近报修
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="complaint-tab" data-toggle="tab" href="#complaint" role="tab"><i class="fas fa-comment-alt mr-1"></i>我的投诉</a>
+                            <a class="nav-link" id="complaint-tab" data-toggle="tab" href="#complaint" role="tab">
+                                <i class="fas fa-comment-alt mr-1"></i>我的投诉
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -229,16 +486,20 @@
                     <div class="tab-content" id="myTabContent">
                         <!-- 报修列表 -->
                         <div class="tab-pane fade show active" id="repair" role="tabpanel">
-                            <table class="table table-sm" id="repairTable">
+                            <table class="table table-sm table-hover" id="repairTable">
                                 <thead><tr><th>类型</th><th>描述</th><th>状态</th><th>时间</th></tr></thead>
-                                <tbody><tr><td colspan="4" class="text-center text-muted small">加载中...</td></tr></tbody>
+                                <tbody><tr><td colspan="4" class="text-center text-muted small py-3">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                                </td></tr></tbody>
                             </table>
                         </div>
                         <!-- 投诉列表 -->
                         <div class="tab-pane fade" id="complaint" role="tabpanel">
-                            <table class="table table-sm" id="complaintTable">
+                            <table class="table table-sm table-hover" id="complaintTable">
                                 <thead><tr><th>类型</th><th>标题</th><th>状态</th><th>时间</th></tr></thead>
-                                <tbody><tr><td colspan="4" class="text-center text-muted small">加载中...</td></tr></tbody>
+                                <tbody><tr><td colspan="4" class="text-center text-muted small py-3">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                                </td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -252,27 +513,66 @@
             <div class="card-box">
                 <div class="card-header">
                     <span><i class="fas fa-id-card text-info mr-2"></i>我的档案</span>
+                    <a href="profile.jsp" class="small text-primary font-weight-bold">编辑 <i class="fas fa-edit ml-1"></i></a>
                 </div>
                 <div class="card-body">
+                    <!-- 头像区域 -->
+                    <div class="text-center mb-3 pb-3" style="border-bottom: 2px dashed #e9ecef;">
+                        <img src="https://ui-avatars.com/api/?name=${sessionScope.user.realName}&background=667eea&color=fff&size=80&bold=true"
+                             class="rounded-circle mb-2" width="80" height="80"
+                             style="border: 3px solid #667eea; box-shadow: 0 3px 15px rgba(102, 126, 234, 0.3);">
+                        <h5 class="mb-1 font-weight-bold" id="ownerNameDisplay">${sessionScope.user.realName}</h5>
+                        <span class="badge badge-primary" id="ownerIdBadge">${sessionScope.user.username}</span>
+                    </div>
+
+                    <!-- 基本信息 -->
                     <div class="profile-row">
-                        <span class="profile-label">业主姓名</span>
-                        <span class="profile-val" id="ownerName">${sessionScope.user.realName}</span>
+                        <span class="profile-label"><i class="fas fa-id-card mr-1 text-muted"></i> 业主编号</span>
+                        <span class="profile-val" id="ownerId">${sessionScope.user.username}</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">联系电话</span>
+                        <span class="profile-label"><i class="fas fa-phone mr-1 text-muted"></i> 联系电话</span>
                         <span class="profile-val" id="phone">-</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">房屋数量</span>
-                        <span class="profile-val"><span id="houseCount">0</span> 套</span>
+                        <span class="profile-label"><i class="fas fa-id-card-alt mr-1 text-muted"></i> 身份证号</span>
+                        <span class="profile-val" id="idCard">-</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">家庭成员</span>
+                        <span class="profile-label"><i class="fas fa-home mr-1 text-muted"></i> 房屋数量</span>
+                        <span class="profile-val">
+                            <span class="badge badge-primary badge-pill" id="houseCount">0</span> 套
+                        </span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fas fa-users mr-1 text-muted"></i> 家庭成员</span>
                         <span class="profile-val"><span id="memberCount">0</span> 人</span>
                     </div>
-                    <div class="profile-row border-0">
-                        <span class="profile-label">注册日期</span>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fas fa-envelope mr-1 text-muted"></i> 电子邮箱</span>
+                        <span class="profile-val" id="email">-</span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fas fa-calendar-check mr-1 text-muted"></i> 注册日期</span>
                         <span class="profile-val" id="registerDate">-</span>
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class="fas fa-info-circle mr-1 text-muted"></i> 账号状态</span>
+                        <span class="profile-val"><span class="badge badge-success" id="accountStatus">正常</span></span>
+                    </div>
+
+                    <!-- 房屋列表（折叠显示） -->
+                    <div class="mt-3 pt-3" style="border-top: 2px dashed #e9ecef;">
+                        <a class="btn btn-sm btn-outline-primary btn-block" data-toggle="collapse" href="#houseListCollapse">
+                            <i class="fas fa-building mr-1"></i> 我的房屋列表 (<span id="houseCountBadge">0</span>) <i class="fas fa-chevron-down float-right mt-1"></i>
+                        </a>
+                        <div class="collapse mt-2" id="houseListCollapse">
+                            <div id="houseListDetail">
+                                <div class="text-center text-muted small py-2">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -325,13 +625,49 @@
             </div>
 
             <!-- 物业联系方式 -->
-            <div class="card-box bg-light">
+            <div class="card-box" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #667eea;">
                 <div class="card-body">
-                    <h6 class="font-weight-bold mb-3"><i class="fas fa-building mr-2 text-primary"></i>物业服务中心</h6>
-                    <p class="small text-muted mb-2"><i class="fas fa-phone-alt mr-2 text-success"></i>24小时热线:<strong>010-88888888</strong></p>
-                    <p class="small text-muted mb-2"><i class="fas fa-clock mr-2 text-warning"></i>服务时间:周一至周日 8:00-18:00</p>
-                    <p class="small text-muted mb-0"><i class="fas fa-map-marker-alt mr-2 text-danger"></i>地址:小区正门东侧办公楼101</p>
+                    <h6 class="font-weight-bold mb-3">
+                        <i class="fas fa-building mr-2 text-primary"></i>物业服务中心
+                    </h6>
+                    <p class="small mb-2">
+                        <i class="fas fa-phone-alt mr-2 text-success"></i>
+                        <strong>24小时热线：</strong>010-88888888
+                    </p>
+                    <p class="small mb-2">
+                        <i class="fas fa-clock mr-2 text-warning"></i>
+                        <strong>服务时间：</strong>周一至周日 8:00-18:00
+                    </p>
+                    <p class="small mb-0">
+                        <i class="fas fa-map-marker-alt mr-2 text-danger"></i>
+                        <strong>地址：</strong>小区正门东侧办公楼101
+                    </p>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 房屋详情模态框 -->
+<div class="modal fade" id="houseDetailModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-home mr-2"></i>房屋详细信息</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="houseDetailContent">
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2 text-muted">加载中...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>关闭
+                </button>
             </div>
         </div>
     </div>
@@ -382,7 +718,12 @@
                 if((res.success || res.code === 200) && res.data) {
                     var houses = res.data;
                     $('#houseCount').text(houses.length);
+                    $('#houseCountBadge').text(houses.length);
                     console.log('房屋数量:', houses.length);
+
+                    // 🔥 渲染房屋列表
+                    var houseListDiv = $('#houseListDetail');
+                    houseListDiv.empty();
 
                     if(houses.length > 0) {
                         var firstHouse = houses[0];
@@ -390,6 +731,43 @@
                             $('#phone').text(firstHouse.phone);
                             console.log('联系电话:', firstHouse.phone);
                         }
+
+                        // 渲染每套房屋
+                        $.each(houses, function(index, house) {
+                            var houseId = house.houseId || house.house_id || '';
+                            var buildingNo = house.buildingNo || house.building_no || '';
+                            var unitNo = house.unitNo || house.unit_no || '';
+                            var floor = house.floor || '';
+                            var area = house.area || '-';
+                            var layout = house.layout || house.houseType || house.house_type || '-';
+                            var houseStatus = house.houseStatus || house.house_status || 'occupied';
+                            var saleStatus = house.saleStatus || house.sale_status || 'sold';
+
+                            // 格式化房屋编号：0101201 -> 1栋1单元201
+                            var displayHouseNo = formatHouseNumber(houseId, buildingNo, unitNo, floor);
+
+                            // 状态徽章
+                            var statusBadge = getHouseStatusBadge(houseStatus);
+                            var saleBadge = getSaleStatusBadge(saleStatus);
+
+                            var houseHtml =
+                                '<div class="house-card" onclick="showHouseDetail(\'' + houseId + '\')">' +
+                                '<div class="house-card-header">' +
+                                '<div class="house-number">' +
+                                '<i class="fas fa-home mr-1"></i>' + displayHouseNo +
+                                '</div>' +
+                                '<div>' + statusBadge + ' ' + saleBadge + '</div>' +
+                                '</div>' +
+                                '<div class="house-info-row">' +
+                                '<span><i class="fas fa-ruler-combined mr-1"></i>' + area + 'm²</span>' +
+                                '<span><i class="fas fa-door-open mr-1"></i>' + layout + '</span>' +
+                                '<span class="text-primary"><i class="fas fa-info-circle mr-1"></i>查看详情</span>' +
+                                '</div>' +
+                                '</div>';
+                            houseListDiv.append(houseHtml);
+                        });
+                    } else {
+                        houseListDiv.html('<div class="text-center text-muted small py-2">暂无房屋信息</div>');
                     }
                 } else {
                     console.warn('⚠️ 业主房屋信息返回格式异常');
@@ -399,6 +777,148 @@
                 console.error('❌ 加载业主房屋信息失败', error);
             }
         });
+    }
+
+    // ==================== 格式化房屋编号 ====================
+    function formatHouseNumber(houseId, buildingNo, unitNo, floor) {
+        if (!houseId || houseId.length !== 7) {
+            return houseId || '-';
+        }
+
+        var building = parseInt(houseId.substring(0, 2)) || parseInt(buildingNo);
+        var unit = parseInt(houseId.substring(2, 3)) || parseInt(unitNo);
+        var floorNum = parseInt(houseId.substring(3, 5)) || parseInt(floor);
+        var roomNum = houseId.substring(5, 7);
+
+        return building + '栋' + unit + '单元' + floorNum + roomNum + '号';
+    }
+
+    // ==================== 房屋状态徽章 ====================
+    function getHouseStatusBadge(status) {
+        var badges = {
+            'vacant': '<span class="badge badge-secondary badge-sm">空置</span>',
+            'occupied': '<span class="badge badge-success badge-sm">已入住</span>',
+            'rented': '<span class="badge badge-info badge-sm">出租中</span>'
+        };
+        return badges[status] || '<span class="badge badge-secondary badge-sm">' + status + '</span>';
+    }
+
+    // ==================== 销售状态徽章 ====================
+    function getSaleStatusBadge(status) {
+        var badges = {
+            'for_sale': '<span class="badge badge-warning badge-sm">待售</span>',
+            'sold': '<span class="badge badge-primary badge-sm">已售</span>',
+            'leased': '<span class="badge badge-info badge-sm">已租</span>'
+        };
+        return badges[status] || '<span class="badge badge-secondary badge-sm">' + status + '</span>';
+    }
+
+    // ==================== 显示房屋详情 ====================
+    function showHouseDetail(houseId) {
+        console.log('🏠 查看房屋详情:', houseId);
+
+        $('#houseDetailModal').modal('show');
+        $('#houseDetailContent').html(
+            '<div class="text-center py-4">' +
+            '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>' +
+            '<p class="mt-2 text-muted">加载中...</p>' +
+            '</div>'
+        );
+
+        $.ajax({
+            url: contextPath + '/owner/info',
+            type: 'GET',
+            data: {
+                action: 'houseDetail',
+                houseId: houseId
+            },
+            dataType: 'json',
+            success: function(res) {
+                console.log('✅ 房屋详情返回:', res);
+
+                if ((res.success || res.code === 200) && res.data) {
+                    var house = res.data;
+                    renderHouseDetail(house);
+                } else {
+                    $('#houseDetailContent').html(
+                        '<div class="alert alert-warning text-center">' +
+                        '<i class="fas fa-exclamation-triangle mr-2"></i>' +
+                        (res.message || '加载失败') +
+                        '</div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ 加载房屋详情失败:', error);
+                $('#houseDetailContent').html(
+                    '<div class="alert alert-danger text-center">' +
+                    '<i class="fas fa-times-circle mr-2"></i>网络错误，请稍后重试' +
+                    '</div>'
+                );
+            }
+        });
+    }
+
+    // ==================== 渲染房屋详情 ====================
+    function renderHouseDetail(house) {
+        var houseId = house.houseId || house.house_id || '';
+        var buildingNo = house.buildingNo || house.building_no || '';
+        var unitNo = house.unitNo || house.unit_no || '';
+        var floor = house.floor || '';
+        var layout = house.layout || '-';
+        var area = house.area || '-';
+        var pricePerSqm = house.pricePerSqm || house.price_per_sqm || 0;
+        var houseStatus = house.houseStatus || house.house_status || 'vacant';
+        var saleStatus = house.saleStatus || house.sale_status || 'for_sale';
+        var createTime = house.createTime || house.create_time;
+        var updateTime = house.updateTime || house.update_time;
+
+        var displayHouseNo = formatHouseNumber(houseId, buildingNo, unitNo, floor);
+        var totalPrice = (parseFloat(area) * parseFloat(pricePerSqm)).toFixed(2);
+
+        var html =
+            '<div class="row">' +
+            '<div class="col-md-12">' +
+            '<div class="alert" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white;">' +
+            '<h4 class="mb-0"><i class="fas fa-home mr-2"></i>' + displayHouseNo + '</h4>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+
+            '<div class="row">' +
+            '<div class="col-md-6">' +
+            '<table class="table table-bordered table-sm">' +
+            '<tr><th width="120"><i class="fas fa-hashtag mr-1 text-primary"></i>房屋编号</th><td>' + houseId + '</td></tr>' +
+            '<tr><th><i class="fas fa-building mr-1 text-primary"></i>楼栋号</th><td>' + parseInt(buildingNo) + '栋</td></tr>' +
+            '<tr><th><i class="fas fa-door-closed mr-1 text-primary"></i>单元号</th><td>' + parseInt(unitNo) + '单元</td></tr>' +
+            '<tr><th><i class="fas fa-layer-group mr-1 text-primary"></i>楼层</th><td>' + parseInt(floor) + '层</td></tr>' +
+            '<tr><th><i class="fas fa-door-open mr-1 text-primary"></i>户型</th><td>' + layout + '</td></tr>' +
+            '</table>' +
+            '</div>' +
+            '<div class="col-md-6">' +
+            '<table class="table table-bordered table-sm">' +
+            '<tr><th width="120"><i class="fas fa-ruler-combined mr-1 text-primary"></i>建筑面积</th><td><strong class="text-primary">' + area + ' m²</strong></td></tr>' +
+            '<tr><th><i class="fas fa-dollar-sign mr-1 text-primary"></i>单价</th><td>¥' + parseFloat(pricePerSqm).toFixed(2) + '/m²</td></tr>' +
+            '<tr><th><i class="fas fa-coins mr-1 text-primary"></i>总价</th><td><strong class="text-danger">¥' + totalPrice + '</strong></td></tr>' +
+            '<tr><th><i class="fas fa-info-circle mr-1 text-primary"></i>入住状态</th><td>' + getHouseStatusBadge(houseStatus) + '</td></tr>' +
+            '<tr><th><i class="fas fa-tag mr-1 text-primary"></i>销售状态</th><td>' + getSaleStatusBadge(saleStatus) + '</td></tr>' +
+            '</table>' +
+            '</div>' +
+            '</div>' +
+
+            '<div class="row mt-3">' +
+            '<div class="col-md-12">' +
+            '<div class="card" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: none;">' +
+            '<div class="card-body">' +
+            '<h6 class="font-weight-bold mb-2"><i class="fas fa-clock mr-2 text-primary"></i>时间信息</h6>' +
+            '<p class="mb-1 small"><strong>创建时间：</strong>' + formatDateTime(createTime) + '</p>' +
+            '<p class="mb-0 small"><strong>更新时间：</strong>' + formatDateTime(updateTime) + '</p>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+
+        $('#houseDetailContent').html(html);
     }
 
     // ==================== 2. 加载业主详细信息 ====================
@@ -416,25 +936,48 @@
                 if((res.success || res.code === 200) && res.data) {
                     var data = res.data;
 
-                    // 更新家庭成员数量
-                    if(data.memberCount) {
-                        $('#memberCount').text(data.memberCount);
-                        console.log('家庭成员:', data.memberCount, '人');
+                    if(data.ownerName || data.owner_name) {
+                        var name = data.ownerName || data.owner_name;
+                        $('#ownerNameDisplay').text(name);
                     }
 
-                    // 更新注册日期
-                    if(data.registerDate) {
-                        $('#registerDate').text(formatDate(data.registerDate));
-                        console.log('注册日期:', formatDate(data.registerDate));
+                    if(data.ownerId || data.owner_id) {
+                        var id = data.ownerId || data.owner_id;
+                        $('#ownerId').text(id);
+                        $('#ownerIdBadge').text(id);
                     }
 
-                    // 更新联系电话(如果之前没获取到)
-                    if(data.phone && $('#phone').text() === '-') {
+                    if(data.phone) {
                         $('#phone').text(data.phone);
-                        console.log('联系电话:', data.phone);
                     }
-                } else {
-                    console.warn('⚠️ 业主详细信息返回格式异常');
+
+                    if(data.idCard || data.id_card) {
+                        var idCard = data.idCard || data.id_card;
+                        var maskedIdCard = idCard.length >= 18 ?
+                            idCard.substring(0, 6) + '********' + idCard.substring(14) :
+                            idCard.substring(0, 3) + '***' + idCard.substring(idCard.length - 2);
+                        $('#idCard').text(maskedIdCard);
+                    }
+
+                    if(data.email) {
+                        $('#email').text(data.email);
+                    }
+
+                    if(data.memberCount || data.member_count) {
+                        var count = data.memberCount || data.member_count;
+                        $('#memberCount').text(count);
+                    }
+
+                    if(data.registerDate || data.register_date) {
+                        var date = data.registerDate || data.register_date;
+                        $('#registerDate').text(formatDate(date));
+                    }
+
+                    if(data.status) {
+                        var statusText = data.status === 'active' ? '正常' : '停用';
+                        var statusClass = data.status === 'active' ? 'badge-success' : 'badge-danger';
+                        $('#accountStatus').removeClass('badge-success badge-danger').addClass(statusClass).text(statusText);
+                    }
                 }
             },
             error: function(xhr, status, error) {
@@ -464,9 +1007,7 @@
                     var total = unpaidAmount + overdueAmount;
 
                     $('#unpaidAmount').text(total.toFixed(2));
-                    console.log('待缴金额: ¥' + total.toFixed(2));
                 } else {
-                    console.warn('⚠️ 欠费汇总返回格式异常');
                     $('#unpaidAmount').text('0.00');
                 }
             },
@@ -503,8 +1044,6 @@
                     list = res.data.list || [];
                 }
 
-                console.log('账单数量:', list.length);
-
                 if(list.length > 0) {
                     $.each(list, function(i, item) {
                         var itemName = item.itemName || item.item_name || '-';
@@ -536,7 +1075,7 @@
                     });
                 } else {
                     tbody.html('<tr><td colspan="6" class="text-center text-success py-3">' +
-                        '<i class="fas fa-check-circle mr-2"></i>太棒了,所有账单已结清!</td></tr>');
+                        '<i class="fas fa-check-circle mr-2"></i>太棒了，所有账单已结清！</td></tr>');
                 }
             },
             error: function(xhr, status, error) {
@@ -571,8 +1110,6 @@
                     list = res.data.list || [];
                 }
 
-                console.log('报修数量:', list.length);
-
                 if(list.length > 0) {
                     $.each(list, function(i, item) {
                         var repairType = item.repairType || item.repair_type;
@@ -599,7 +1136,6 @@
                 }
 
                 $('#repairCount').text(ongoingCount);
-                console.log('进行中的报修:', ongoingCount);
             },
             error: function(xhr, status, error) {
                 console.error('❌ 加载报修记录失败', error);
@@ -618,7 +1154,7 @@
             data: {
                 method: 'list',
                 pageNum: 1,
-                pageSize: 4
+                pageSize: 5
             },
             dataType: 'json',
             success: function(res) {
@@ -633,8 +1169,6 @@
                     list = res.data.list || [];
                     total = res.data.totalCount || res.data.total || list.length;
                 }
-
-                console.log('公告数量:', list.length);
 
                 if(list.length > 0) {
                     $('#noticeCount').text(total);
@@ -704,8 +1238,6 @@
                     list = res.data.list || [];
                     total = res.data.total || list.length;
                 }
-
-                console.log('投诉数量:', list.length);
 
                 if(list.length > 0) {
                     $('#complaintCount').text(total);
@@ -811,10 +1343,86 @@
         }
     }
 
+    function formatDateTime(timestamp) {
+        if(!timestamp) return '-';
+
+        try {
+            var date = new Date(timestamp);
+            if(isNaN(date.getTime())) return '-';
+
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            var hour = String(date.getHours()).padStart(2, '0');
+            var minute = String(date.getMinutes()).padStart(2, '0');
+
+            return year + '-' + month + '-' + day + ' ' + hour + ':' + minute;
+        } catch(error) {
+            console.error('日期时间格式化出错:', error);
+            return '-';
+        }
+    }
+
     function showContact() {
-        alert('物业服务中心\n\n24小时热线:010-88888888\n服务时间:周一至周日 8:00-18:00\n地址:小区正门东侧办公楼101');
+        // 使用美化的模态框显示联系方式
+        var modalHtml =
+            '<div class="modal fade" id="contactModal" tabindex="-1">' +
+            '<div class="modal-dialog modal-dialog-centered">' +
+            '<div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">' +
+            '<div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0; border: none;">' +
+            '<h5 class="modal-title"><i class="fas fa-phone-volume mr-2"></i>物业服务中心</h5>' +
+            '<button type="button" class="close text-white" data-dismiss="modal" style="opacity: 0.8;"><span>&times;</span></button>' +
+            '</div>' +
+            '<div class="modal-body p-4">' +
+            '<div class="text-center mb-4">' +
+            '<div style="width: 80px; height: 80px; margin: 0 auto 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">' +
+            '<i class="fas fa-building fa-3x text-white"></i>' +
+            '</div>' +
+            '<h5 class="font-weight-bold mb-1">智慧社区物业管理中心</h5>' +
+            '<p class="text-muted small mb-0">为您提供优质的物业服务</p>' +
+            '</div>' +
+            '<div class="list-group list-group-flush">' +
+            '<div class="list-group-item border-0 px-0 py-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; margin-bottom: 10px;">' +
+            '<i class="fas fa-phone-alt text-success mr-3 fa-lg"></i>' +
+            '<strong>24小时热线：</strong><span class="text-primary font-weight-bold ml-2">010-88888888</span>' +
+            '</div>' +
+            '<div class="list-group-item border-0 px-0 py-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; margin-bottom: 10px;">' +
+            '<i class="fas fa-clock text-warning mr-3 fa-lg"></i>' +
+            '<strong>服务时间：</strong><span class="ml-2">周一至周日 8:00-18:00</span>' +
+            '</div>' +
+            '<div class="list-group-item border-0 px-0 py-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; margin-bottom: 10px;">' +
+            '<i class="fas fa-map-marker-alt text-danger mr-3 fa-lg"></i>' +
+            '<strong>地址：</strong><span class="ml-2">小区正门东侧办公楼101</span>' +
+            '</div>' +
+            '<div class="list-group-item border-0 px-0 py-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">' +
+            '<i class="fas fa-envelope text-info mr-3 fa-lg"></i>' +
+            '<strong>邮箱：</strong><span class="ml-2">service@community.com</span>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="modal-footer border-0">' +
+            '<button type="button" class="btn btn-primary btn-block" data-dismiss="modal" style="border-radius: 10px;">' +
+            '<i class="fas fa-check mr-2"></i>知道了' +
+            '</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+
+        // 移除旧的模态框（如果存在）
+        $('#contactModal').remove();
+
+        // 添加新的模态框并显示
+        $('body').append(modalHtml);
+        $('#contactModal').modal('show');
+
+        // 模态框关闭后移除
+        $('#contactModal').on('hidden.bs.modal', function() {
+            $(this).remove();
+        });
     }
 </script>
 
 </body>
 </html>
+

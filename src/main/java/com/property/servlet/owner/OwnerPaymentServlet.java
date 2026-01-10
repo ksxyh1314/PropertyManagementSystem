@@ -17,10 +17,11 @@ import java.io.PrintWriter;
 import java.util.*;
 
 /**
- * 业主端 - 缴费管理 Servlet
+ * 业主端 - 缴费管理 Servlet（增加日志记录）
  *
  * ✅ 完全适配数据库下划线命名
  * ✅ 添加详细日志输出
+ * ✅ 增加操作日志记录
  */
 @WebServlet("/owner/payment")
 public class OwnerPaymentServlet extends HttpServlet {
@@ -28,7 +29,7 @@ public class OwnerPaymentServlet extends HttpServlet {
     private final PaymentService paymentService = new PaymentService();
     private final Gson gson = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd HH:mm:ss")
-            .serializeNulls()  // 🔥 序列化null值
+            .serializeNulls()
             .create();
 
     @Override
@@ -116,14 +117,13 @@ public class OwnerPaymentServlet extends HttpServlet {
 
             logger.info("✅ 查询成功，原始数据: {}", summary);
 
-            // 🔥 修复：使用驼峰命名获取数据，然后转换为下划线命名返回
             Map<String, Object> result = new HashMap<>();
-            result.put("unpaid_count", summary.get("unpaidCount"));      // 未逾期数量
-            result.put("unpaid_amount", summary.get("unpaidAmount"));    // 未逾期金额（含滞纳金）
-            result.put("overdue_count", summary.get("overdueCount"));    // 逾期数量
-            result.put("overdue_amount", summary.get("overdueAmount"));  // 逾期金额（含滞纳金）
-            result.put("total_count", summary.get("totalCount"));        // 🔥 新增：总欠费数量
-            result.put("total_amount", summary.get("totalAmount"));      // 🔥 新增：总欠费金额（含滞纳金）
+            result.put("unpaid_count", summary.get("unpaidCount"));
+            result.put("unpaid_amount", summary.get("unpaidAmount"));
+            result.put("overdue_count", summary.get("overdueCount"));
+            result.put("overdue_amount", summary.get("overdueAmount"));
+            result.put("total_count", summary.get("totalCount"));
+            result.put("total_amount", summary.get("totalAmount"));
 
             logger.info("📤 返回数据: {}", result);
             logger.info("  未逾期: {}笔, ¥{}", result.get("unpaid_count"), result.get("unpaid_amount"));
@@ -137,7 +137,6 @@ public class OwnerPaymentServlet extends HttpServlet {
             writeError(resp, "查询失败：" + e.getMessage());
         }
     }
-
 
     /**
      * 查询待缴费列表
@@ -193,7 +192,6 @@ public class OwnerPaymentServlet extends HttpServlet {
             logger.info("  total={}", result.get("total"));
             logger.info("  list.size={}", result.get("list") != null ? ((List<?>)result.get("list")).size() : 0);
 
-            // 🔥 打印第一条数据用于调试
             if (result.get("list") != null) {
                 List<?> list = (List<?>) result.get("list");
                 if (!list.isEmpty()) {
@@ -265,7 +263,6 @@ public class OwnerPaymentServlet extends HttpServlet {
 
     /**
      * 查询账单详情
-     * 🔥 修复：通过 Service 层验证权限
      */
     private void getDetail(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -288,7 +285,6 @@ public class OwnerPaymentServlet extends HttpServlet {
         }
 
         try {
-            // 🔥 修改：使用带权限验证的方法
             PaymentRecord record = paymentService.getDetailByIdForOwner(recordId, ownerId);
 
             if (record == null) {
@@ -297,7 +293,6 @@ public class OwnerPaymentServlet extends HttpServlet {
                 return;
             }
 
-            // 🔥 获取完整的账单详情（包含收费项目信息）
             Map<String, Object> detail = paymentService.getPaymentDetailWithChargeItem(String.valueOf(recordId));
 
             logger.info("✅ 查询详情成功");
@@ -305,7 +300,6 @@ public class OwnerPaymentServlet extends HttpServlet {
             logger.info("  amount={}", detail.get("amount"));
             logger.info("  lateFee={}", detail.get("late_fee"));
 
-            // 🔥 如果未缴费，计算滞纳金
             String paymentStatus = (String) detail.get("payment_status");
             if (!"paid".equals(paymentStatus)) {
                 Map<String, Object> calculation = paymentService.calculateLateFee(String.valueOf(recordId));
@@ -330,7 +324,7 @@ public class OwnerPaymentServlet extends HttpServlet {
     // ==================== 💰 缴费相关 ====================
 
     /**
-     * 处理缴费
+     * ✅ 处理缴费（增加日志记录）
      */
     private void processPay(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -373,7 +367,13 @@ public class OwnerPaymentServlet extends HttpServlet {
                 return;
             }
 
-            Map<String, Object> result = paymentService.processPayment(recordId, paymentMethod, operatorId);
+            // ✅ 传递 request 用于记录日志
+            Map<String, Object> result = paymentService.processPayment(
+                    recordId,
+                    paymentMethod,
+                    operatorId,
+                    req  // ✅ 传递请求对象
+            );
 
             logger.info("✅ 缴费处理完成");
             logger.info("  success={}", result.get("success"));
@@ -394,7 +394,7 @@ public class OwnerPaymentServlet extends HttpServlet {
     }
 
     /**
-     * 批量缴费
+     * ✅ 批量缴费（增加日志记录）
      */
     private void processBatchPay(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -448,7 +448,8 @@ public class OwnerPaymentServlet extends HttpServlet {
                 }
             }
 
-            Map<String, Object> result = executeBatchPayment(idList, paymentMethod, operatorId);
+            // ✅ 传递 request 用于记录日志
+            Map<String, Object> result = executeBatchPayment(idList, paymentMethod, operatorId, req);
 
             int successCount = (int) result.get("successCount");
             int failCount = (int) result.get("failCount");
@@ -489,7 +490,11 @@ public class OwnerPaymentServlet extends HttpServlet {
         return idList;
     }
 
-    private Map<String, Object> executeBatchPayment(List<Integer> idList, String paymentMethod, Integer operatorId) {
+    /**
+     * ✅ 执行批量缴费（增加日志记录）
+     */
+    private Map<String, Object> executeBatchPayment(List<Integer> idList, String paymentMethod,
+                                                    Integer operatorId, HttpServletRequest req) {
         int successCount = 0;
         int failCount = 0;
         double totalAmount = 0.0;
@@ -497,7 +502,13 @@ public class OwnerPaymentServlet extends HttpServlet {
 
         for (Integer recordId : idList) {
             try {
-                Map<String, Object> result = paymentService.processPayment(recordId, paymentMethod, operatorId);
+                // ✅ 传递 request 用于记录日志
+                Map<String, Object> result = paymentService.processPayment(
+                        recordId,
+                        paymentMethod,
+                        operatorId,
+                        req  // ✅ 传递请求对象
+                );
 
                 if ((Boolean) result.get("success")) {
                     successCount++;
@@ -588,5 +599,4 @@ public class OwnerPaymentServlet extends HttpServlet {
         out.print(json);
         out.flush();
     }
-
 }

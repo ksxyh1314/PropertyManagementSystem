@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 业主端 - 投诉建议 Servlet (完整版：含撤销、追加、删除)
+ * 业主端 - 投诉建议 Servlet（✅ 增加日志记录）
  */
 @WebServlet(
         urlPatterns = "/owner/complaint/*",
@@ -190,7 +190,7 @@ public class OwnerComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 🔥 3. 提交投诉（✅ 修复版：匿名投诉也保存 owner_id）
+     * 🔥 3. 提交投诉（✅ 使用存储过程 sp_submit_complaint，已包含日志记录）
      */
     private void submitComplaint(HttpServletRequest request, HttpServletResponse response,
                                  String ownerId) throws IOException {
@@ -225,6 +225,7 @@ public class OwnerComplaintServlet extends HttpServlet {
             System.out.println("    是否匿名: " + complaint.getIsAnonymous());
             System.out.println("    标题: " + complaint.getTitle());
 
+            // ✅ 使用存储过程，已包含日志记录，不需要传 request
             Map<String, Object> result = complaintService.submitComplaint(complaint);
             ResponseUtil.writeJson(response, result);
 
@@ -235,7 +236,7 @@ public class OwnerComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 🔥 4. 撤销投诉
+     * 🔥 4. 撤销投诉（✅ 需要记录日志，传入 request）
      */
     private void cancelComplaint(HttpServletRequest request, HttpServletResponse response,
                                  String ownerId) throws IOException {
@@ -257,7 +258,8 @@ public class OwnerComplaintServlet extends HttpServlet {
             currentUser.setUsername(ownerId);
             currentUser.setUserRole("owner");
 
-            Map<String, Object> result = complaintService.cancelComplaint(complaintId, reason, currentUser);
+            // ✅ 传入 request 记录日志
+            Map<String, Object> result = complaintService.cancelComplaint(complaintId, reason, currentUser, request);
 
             System.out.println("撤销结果: " + result);
             ResponseUtil.writeJson(response, result);
@@ -267,8 +269,9 @@ public class OwnerComplaintServlet extends HttpServlet {
             ResponseUtil.writeJson(response, ResponseUtil.error("撤销失败: " + e.getMessage()));
         }
     }
+
     /**
-     * 🔥 5. 追加说明（修复版）
+     * 🔥 5. 追加说明（✅ 需要记录日志，传入 request）
      */
     private void appendContent(HttpServletRequest request, HttpServletResponse response,
                                String ownerId) throws IOException {
@@ -369,9 +372,9 @@ public class OwnerComplaintServlet extends HttpServlet {
                 return;
             }
 
-            // 🔥 4. 执行追加
+            // 🔥 4. ✅ 执行追加，传入 request 记录日志
             System.out.println(">>> 开始追加说明");
-            Map<String, Object> result = complaintService.appendContent(complaintId, ownerId, content);
+            Map<String, Object> result = complaintService.appendContent(complaintId, ownerId, content, request);
 
             System.out.println("✅ 追加结果: " + result);
             ResponseUtil.writeJson(response, result);
@@ -384,8 +387,7 @@ public class OwnerComplaintServlet extends HttpServlet {
     }
 
     /**
-     * 🔥 删除投诉记录（修复版）
-     * 允许删除：已关闭、已解决、已撤销的投诉
+     * 🔥 6. 删除投诉记录（✅ 使用存储过程 sp_delete_complaint，已包含日志记录）
      */
     private void deleteComplaint(HttpServletRequest request, HttpServletResponse response,
                                  String ownerId) throws IOException {
@@ -441,7 +443,7 @@ public class OwnerComplaintServlet extends HttpServlet {
                 return;
             }
 
-            // 🔥 4. 执行删除
+            // 🔥 4. ✅ 执行删除（使用存储过程，已包含日志记录）
             System.out.println(">>> 开始删除投诉，ID: " + complaintId);
             boolean success = complaintService.deleteComplaint(complaintId);
 

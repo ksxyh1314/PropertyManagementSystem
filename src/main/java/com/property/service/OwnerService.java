@@ -7,13 +7,15 @@ import com.property.entity.Owner;
 import com.property.entity.House;
 import com.property.entity.User;
 import com.property.util.MD5Util;
+import com.property.util.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
- * 业主服务类
+ * 业主服务类（✅ 增加日志记录）
  */
 public class OwnerService {
     private static final Logger logger = LoggerFactory.getLogger(OwnerService.class);
@@ -44,7 +46,6 @@ public class OwnerService {
 
         return owner;
     }
-
 
     /**
      * 查询所有业主
@@ -100,15 +101,22 @@ public class OwnerService {
     }
 
     /**
-     * 添加业主（同时创建用户账号）
-     *
-     * Service 层职责：
-     * - 参数验证
-     * - 业务规则校验
-     * - 手动创建用户账号（支持自定义密码）
-     * - 手动更新房屋关联
+     * 添加业主（支持不传 request）
      */
     public boolean addOwner(Owner owner, String password) {
+        return addOwner(owner, password, null, null);
+    }
+
+    /**
+     * ✅ 添加业主（增加日志记录）
+     *
+     * @param owner 业主信息
+     * @param password 登录密码
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean addOwner(Owner owner, String password, Integer operatorId, HttpServletRequest request) {
         // ========================================
         // 1. 参数验证
         // ========================================
@@ -170,7 +178,7 @@ public class OwnerService {
         try {
             User user = new User();
             user.setUsername(ownerId);
-            user.setPassword(MD5Util.encrypt(password));  // 🔥 使用传入的密码
+            user.setPassword(MD5Util.encrypt(password));
             user.setRealName(owner.getOwnerName());
             user.setUserRole("owner");
             user.setPhone(owner.getPhone());
@@ -206,14 +214,37 @@ public class OwnerService {
         }
 
         logger.info("✅ 添加业主成功：{} - {}", ownerId, owner.getOwnerName());
+
+        // ✅ 记录操作日志
+        if (operatorId != null && request != null) {
+            LogUtil.log(
+                    operatorId,
+                    "admin_" + operatorId,
+                    "owner_add",
+                    "添加业主：" + owner.getOwnerName() + "（" + ownerId + "）",
+                    LogUtil.getClientIP(request)
+            );
+        }
+
         return true;
     }
 
-
     /**
-     * 更新业主信息
+     * 更新业主信息（支持不传 request）
      */
     public boolean updateOwner(Owner owner) {
+        return updateOwner(owner, null, null);
+    }
+
+    /**
+     * ✅ 更新业主信息（增加日志记录）
+     *
+     * @param owner 业主信息
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean updateOwner(Owner owner, Integer operatorId, HttpServletRequest request) {
         if (owner.getOwnerId() == null || owner.getOwnerId().trim().isEmpty()) {
             throw new IllegalArgumentException("业主ID不能为空");
         }
@@ -271,26 +302,39 @@ public class OwnerService {
             }
 
             logger.info("更新业主成功：{}", owner.getOwnerId());
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "owner_update",
+                        "更新业主：" + owner.getOwnerName() + "（" + owner.getOwnerId() + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
+
             return true;
         }
         return false;
     }
 
-
     /**
-     * 删除业主
-     *
-     * Service 层职责：
-     * - 参数验证
-     * - 业主存在性检查
-     *
-     * 触发器职责（trg_instead_owner_delete）：
-     * - 检查是否有未缴费记录，如果有则阻止删除
-     * - 自动删除用户账号
-     * - 自动清除房屋关联
-     * - 记录操作日志
+     * 删除业主（支持不传 request）
      */
     public boolean deleteOwner(String ownerId) {
+        return deleteOwner(ownerId, null, null);
+    }
+
+    /**
+     * ✅ 删除业主（增加日志记录）
+     *
+     * @param ownerId 业主ID
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean deleteOwner(String ownerId, Integer operatorId, HttpServletRequest request) {
         // ========================================
         // 1. 参数验证
         // ========================================
@@ -335,8 +379,6 @@ public class OwnerService {
         }
     }
 
-
-
     /**
      * 查询欠费业主
      */
@@ -345,9 +387,22 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：重置业主密码
+     * 重置业主密码（支持不传 request）
      */
     public boolean resetPassword(String ownerId, String newPassword) {
+        return resetPassword(ownerId, newPassword, null, null);
+    }
+
+    /**
+     * ✅ 重置业主密码（增加日志记录）
+     *
+     * @param ownerId 业主ID
+     * @param newPassword 新密码
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean resetPassword(String ownerId, String newPassword, Integer operatorId, HttpServletRequest request) {
         if (ownerId == null || ownerId.trim().isEmpty()) {
             throw new IllegalArgumentException("业主ID不能为空");
         }
@@ -372,6 +427,17 @@ public class OwnerService {
 
         if (success) {
             logger.info("重置业主密码成功：{}", ownerId);
+
+            // ✅ 记录操作日志
+            if (operatorId != null && request != null) {
+                LogUtil.log(
+                        operatorId,
+                        "admin_" + operatorId,
+                        "owner_reset_password",
+                        "重置业主密码：" + owner.getOwnerName() + "（" + ownerId + "）",
+                        LogUtil.getClientIP(request)
+                );
+            }
         } else {
             logger.warn("重置业主密码失败：{}", ownerId);
         }
@@ -380,7 +446,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：批量删除业主
+     * ✅ 批量删除业主
      */
     public Map<String, Integer> batchDeleteOwners(List<String> ownerIds) {
         int successCount = 0;
@@ -416,7 +482,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：统计业主信息
+     * ✅ 统计业主信息
      */
     public Map<String, Object> getStatistics() {
         Map<String, Object> stats = new HashMap<>();
@@ -447,7 +513,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：根据关键字搜索业主（不分页）
+     * ✅ 根据关键字搜索业主（不分页）
      */
     public List<Owner> searchOwners(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -457,7 +523,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：验证业主是否存在
+     * ✅ 验证业主是否存在
      */
     public boolean existsById(String ownerId) {
         if (ownerId == null || ownerId.trim().isEmpty()) {
@@ -468,7 +534,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：验证身份证号是否已被使用
+     * ✅ 验证身份证号是否已被使用
      */
     public boolean existsByIdCard(String idCard) {
         if (idCard == null || idCard.trim().isEmpty()) {
@@ -478,7 +544,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：验证手机号是否已被使用
+     * ✅ 验证手机号是否已被使用
      */
     public boolean existsByPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
@@ -488,7 +554,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：获取业主的房屋信息
+     * ✅ 获取业主的房屋信息
      */
     public House getOwnerHouse(String ownerId) {
         if (ownerId == null || ownerId.trim().isEmpty()) {
@@ -508,9 +574,22 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：更新业主状态（启用/禁用）
+     * 更新业主状态（支持不传 request）
      */
     public boolean updateOwnerStatus(String ownerId, int status) {
+        return updateOwnerStatus(ownerId, status, null, null);
+    }
+
+    /**
+     * ✅ 更新业主状态（增加日志记录）
+     *
+     * @param ownerId 业主ID
+     * @param status 状态（1=启用，0=禁用）
+     * @param operatorId 操作员ID
+     * @param request HTTP请求对象（用于记录日志）
+     * @return 是否成功
+     */
+    public boolean updateOwnerStatus(String ownerId, int status, Integer operatorId, HttpServletRequest request) {
         if (ownerId == null || ownerId.trim().isEmpty()) {
             throw new IllegalArgumentException("业主ID不能为空");
         }
@@ -528,6 +607,18 @@ public class OwnerService {
             int rows = userDao.update(user);
             if (rows > 0) {
                 logger.info("更新业主状态成功：{} - 状态: {}", ownerId, status == 1 ? "启用" : "禁用");
+
+                // ✅ 记录操作日志
+                if (operatorId != null && request != null) {
+                    LogUtil.log(
+                            operatorId,
+                            "admin_" + operatorId,
+                            "owner_status",
+                            (status == 1 ? "启用" : "禁用") + "业主：" + owner.getOwnerName() + "（" + ownerId + "）",
+                            LogUtil.getClientIP(request)
+                    );
+                }
+
                 return true;
             }
         }
@@ -536,7 +627,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：根据楼栋查询业主
+     * ✅ 根据楼栋查询业主
      */
     public List<Owner> findByBuilding(String buildingNo) {
         if (buildingNo == null || buildingNo.trim().isEmpty()) {
@@ -546,7 +637,7 @@ public class OwnerService {
     }
 
     /**
-     * ✅ 新增：批量导入业主
+     * ✅ 批量导入业主
      */
     public Map<String, Object> batchImportOwners(List<Owner> owners, String defaultPassword) {
         int successCount = 0;
@@ -666,6 +757,7 @@ public class OwnerService {
 
         return "01";
     }
+
     /**
      * 获取业主总数
      */
@@ -677,6 +769,7 @@ public class OwnerService {
             return 0;
         }
     }
+
     /**
      * 🔥 查询业主拥有的所有房屋
      * @param ownerId 业主ID
@@ -705,6 +798,4 @@ public class OwnerService {
 
         return result;
     }
-
 }
-

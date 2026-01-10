@@ -861,11 +861,222 @@
         // 动态按钮
         var actions = '<button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>';
         if(paymentStatus !== 'paid') {
+            // 待缴费：显示支付按钮
             actions += '<button type="button" class="btn btn-primary btn-lg font-weight-bold" onclick="submitPaymentFromDetail()" style="border-radius: 10px;">';
             actions += '<i class="fas fa-check-circle mr-2"></i>立即支付';
             actions += '</button>';
+        } else {
+            // 已缴费：显示打印收据按钮
+            actions += '<button type="button" class="btn btn-success" onclick="printOwnerReceipt()">';
+            actions += '<i class="fas fa-print mr-2"></i>打印收据';
+            actions += '</button>';
         }
         $('#detailActions').html(actions);
+
+    }
+    /**
+     * 🧾 打印业主端收据
+     */
+    function printOwnerReceipt() {
+        // 从模态框获取当前账单的 recordId
+        var recordId = $('#detailModal').data('recordId');
+
+        if(!recordId) {
+            layer.msg('账单ID无效', {icon: 2});
+            return;
+        }
+
+        console.log('🖨️ 准备打印收据，recordId:', recordId);
+
+        // 重新获取完整数据
+        $.get('${pageContext.request.contextPath}/owner/payment', {
+            action: 'detail',
+            recordId: recordId,
+            ownerId: ownerId
+        }, function(res) {
+            if(res.code === 200 && res.data) {
+                var record = res.data.record || res.data;
+                generatePrintContent(record);
+            } else {
+                layer.msg('获取账单信息失败', {icon: 2});
+            }
+        }, 'json').fail(function() {
+            layer.msg('网络错误', {icon: 2});
+        });
+    }
+
+    /**
+     * 🖨️ 生成打印内容
+     */
+    function generatePrintContent(record) {
+        var printWindow = window.open('', '_blank', 'width=800,height=600');
+
+        // 数据提取
+        var recordId = record.record_id || record.recordId;
+        var itemName = record.item_name || record.itemName || '物业费';
+        var itemCode = record.item_id || record.itemId || '-';
+        var billingPeriod = record.billing_period || record.billingPeriod || '-';
+        var amount = parseFloat(record.amount) || 0;
+        var lateFee = parseFloat(record.late_fee || record.lateFee) || 0;
+        var totalAmount = parseFloat(record.total_amount || record.totalAmount) || (amount + lateFee);
+        var dueDate = record.due_date || record.dueDate;
+        var paymentDate = record.payment_date || record.paymentDate;
+        var paymentMethod = record.payment_method || record.paymentMethod;
+        var receiptNo = record.receipt_no || record.receiptNo || '-';
+        var overdueDays = parseInt(record.overdue_days || record.overdueDays) || 0;
+        var houseId = record.house_id || record.houseId || '-';
+
+        // 构建 HTML
+        printWindow.document.write('<!DOCTYPE html>');
+        printWindow.document.write('<html><head>');
+        printWindow.document.write('<meta charset="UTF-8">');
+        printWindow.document.write('<title>缴费收据 - ' + receiptNo + '</title>');
+
+        // ========== 样式 ==========
+        printWindow.document.write('<style>');
+        printWindow.document.write('* { margin: 0; padding: 0; box-sizing: border-box; }');
+        printWindow.document.write('body { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; padding: 30px; background: white; }');
+        printWindow.document.write('.receipt-container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border: 2px solid #667eea; border-radius: 10px; }');
+
+        // 收据头部
+        printWindow.document.write('.receipt-header { text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }');
+        printWindow.document.write('.receipt-title { color: #667eea; font-weight: bold; font-size: 32px; margin-bottom: 10px; }');
+        printWindow.document.write('.receipt-subtitle { color: #666; font-size: 14px; letter-spacing: 2px; }');
+
+        // 收据编号
+        printWindow.document.write('.receipt-no-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 30px; }');
+        printWindow.document.write('.receipt-no-label { font-size: 12px; opacity: 0.9; margin-bottom: 5px; }');
+        printWindow.document.write('.receipt-no-value { font-size: 24px; font-weight: bold; letter-spacing: 3px; margin-top: 5px; }');
+
+        // 信息行
+        printWindow.document.write('.info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #ddd; }');
+        printWindow.document.write('.info-row:last-child { border-bottom: none; }');
+        printWindow.document.write('.info-label { color: #666; font-size: 14px; }');
+        printWindow.document.write('.info-value { font-weight: 600; color: #333; font-size: 14px; }');
+
+        // 金额区域
+        printWindow.document.write('.amount-section { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }');
+        printWindow.document.write('.amount-row { display: flex; justify-content: space-around; margin-bottom: 15px; }');
+        printWindow.document.write('.amount-item { flex: 1; text-align: center; }');
+        printWindow.document.write('.amount-label { color: #666; font-size: 12px; margin-bottom: 5px; }');
+        printWindow.document.write('.amount-value { font-size: 20px; font-weight: bold; color: #1976d2; }');
+        printWindow.document.write('.total-amount { font-size: 32px; font-weight: bold; color: #e91e63; margin-top: 10px; }');
+
+        // 页脚
+        printWindow.document.write('.receipt-footer { border-top: 2px dashed #ddd; padding-top: 20px; margin-top: 30px; display: flex; justify-content: space-between; align-items: center; }');
+        printWindow.document.write('.footer-left, .footer-right { font-size: 12px; color: #666; line-height: 1.8; }');
+        printWindow.document.write('.footer-right { text-align: right; }');
+        printWindow.document.write('.paid-stamp { color: #4caf50; font-weight: bold; font-size: 16px; }');
+
+        // 打印样式
+        printWindow.document.write('@media print {');
+        printWindow.document.write('  body { padding: 0; }');
+        printWindow.document.write('  .receipt-container { border: none; box-shadow: none; }');
+        printWindow.document.write('  @page { margin: 1.5cm; }');
+        printWindow.document.write('}');
+        printWindow.document.write('</style>');
+
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<div class="receipt-container">');
+
+        // ========== 收据头部 ==========
+        printWindow.document.write('<div class="receipt-header">');
+        printWindow.document.write('<div class="receipt-title">🏠 物业缴费收据</div>');
+        printWindow.document.write('<div class="receipt-subtitle">PROPERTY PAYMENT RECEIPT</div>');
+        printWindow.document.write('</div>');
+
+        // ========== 收据编号 ==========
+        printWindow.document.write('<div class="receipt-no-box">');
+        printWindow.document.write('<div class="receipt-no-label">收据编号 Receipt No.</div>');
+        printWindow.document.write('<div class="receipt-no-value">' + receiptNo + '</div>');
+        printWindow.document.write('</div>');
+
+        // ========== 基本信息 ==========
+        printWindow.document.write('<div style="margin-bottom: 20px;">');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">👤 业主编号</span>');
+        printWindow.document.write('<span class="info-value">' + ownerId + '</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">🏠 房屋编号</span>');
+        printWindow.document.write('<span class="info-value">' + houseId + '</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">📋 收费项目</span>');
+        printWindow.document.write('<span class="info-value">' + itemName + ' (' + itemCode + ')</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">📅 账单周期</span>');
+        printWindow.document.write('<span class="info-value">' + billingPeriod + '</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">⏰ 截止日期</span>');
+        printWindow.document.write('<span class="info-value">' + formatDate(dueDate) + '</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('</div>');
+
+        // ========== 金额明细 ==========
+        printWindow.document.write('<div class="amount-section">');
+        printWindow.document.write('<div class="amount-row">');
+        printWindow.document.write('<div class="amount-item">');
+        printWindow.document.write('<div class="amount-label">应缴金额</div>');
+        printWindow.document.write('<div class="amount-value">¥' + amount.toFixed(2) + '</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="amount-item">');
+        printWindow.document.write('<div class="amount-label">滞纳金</div>');
+        printWindow.document.write('<div class="amount-value" style="color: #f57c00;">¥' + lateFee.toFixed(2) + '</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div style="border-top: 2px dashed #90caf9; padding-top: 15px;">');
+        printWindow.document.write('<div class="amount-label">实缴总额</div>');
+        printWindow.document.write('<div class="total-amount">¥' + totalAmount.toFixed(2) + '</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('</div>');
+
+        // ========== 缴费信息 ==========
+        printWindow.document.write('<div style="margin-bottom: 20px;">');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">💳 支付方式</span>');
+        printWindow.document.write('<span class="info-value">' + getPaymentMethodName(paymentMethod) + '</span>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="info-row">');
+        printWindow.document.write('<span class="info-label">🕐 缴费时间</span>');
+        printWindow.document.write('<span class="info-value">' + formatTime(paymentDate) + '</span>');
+        printWindow.document.write('</div>');
+        if(overdueDays > 0) {
+            printWindow.document.write('<div class="info-row">');
+            printWindow.document.write('<span class="info-label">⚠️ 逾期天数</span>');
+            printWindow.document.write('<span class="info-value" style="color: #ff6b6b;">' + overdueDays + ' 天</span>');
+            printWindow.document.write('</div>');
+        }
+        printWindow.document.write('</div>');
+
+        // ========== 页脚 ==========
+        printWindow.document.write('<div class="receipt-footer">');
+        printWindow.document.write('<div class="footer-left">');
+        printWindow.document.write('<div>收款单位：XX物业管理公司</div>');
+        printWindow.document.write('<div>联系电话：400-XXX-XXXX</div>');
+        printWindow.document.write('<div>打印时间：' + new Date().toLocaleString('zh-CN') + '</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('<div class="footer-right">');
+        printWindow.document.write('<div class="paid-stamp">✅ 已缴费</div>');
+        printWindow.document.write('<div style="color: #999; font-size: 11px; margin-top: 5px;">此收据仅作为缴费凭证</div>');
+        printWindow.document.write('</div>');
+        printWindow.document.write('</div>');
+
+        printWindow.document.write('</div>'); // receipt-container
+        printWindow.document.write('</body></html>');
+
+        printWindow.document.close();
+
+        // 等待加载完成后打印
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.print();
+                // 打印完成后可选择关闭窗口
+                // printWindow.close();
+            }, 500);
+        };
     }
 
     // 🔥 关键修改：提交支付（使用业主自己的 userId）

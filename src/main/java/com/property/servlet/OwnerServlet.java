@@ -1,8 +1,12 @@
 package com.property.servlet;
 
+import com.property.entity.House;
 import com.property.entity.Owner;
+import com.property.entity.User;
+import com.property.service.HouseService;
 import com.property.service.OwnerService;
 import com.property.util.ExcelExportUtil;
+import com.property.util.LogUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,7 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * 业主管理Servlet
+ * 业主管理Servlet（✅ 增加日志记录 + 自动更新房屋状态）
  */
 @WebServlet("/admin/owner")
 public class OwnerServlet extends BaseServlet {
@@ -99,14 +103,16 @@ public class OwnerServlet extends BaseServlet {
             writeError(resp, "查询失败：" + e.getMessage());
         }
     }
-
     /**
-     * 添加业主
+     * ✅ 添加业主（增加日志记录 + 自动更新房屋状态）
      */
     public void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String ownerName = getStringParameter(req, "ownerName");
         String phone = getStringParameter(req, "phone");
@@ -117,6 +123,7 @@ public class OwnerServlet extends BaseServlet {
         String registerDateStr = getStringParameter(req, "registerDate");
         String remark = getStringParameter(req, "remark");
         String password = getStringParameter(req, "password");
+        String ownerType = getStringParameter(req, "ownerType"); // 🔥 业主类型（owner/tenant）
 
         // ✅ 参数验证
         if (ownerName == null || ownerName.trim().isEmpty()) {
@@ -140,6 +147,11 @@ public class OwnerServlet extends BaseServlet {
             return;
         }
 
+        // 🔥 验证业主类型（默认为业主）
+        if (ownerType == null || (!ownerType.equals("owner") && !ownerType.equals("tenant"))) {
+            ownerType = "owner";
+        }
+
         Owner owner = new Owner();
         owner.setOwnerName(ownerName.trim());
         owner.setPhone(phone);
@@ -147,7 +159,14 @@ public class OwnerServlet extends BaseServlet {
         owner.setHouseId(houseId);
         owner.setEmail(email);
         owner.setMemberCount(memberCount != null ? memberCount : 1);
-        owner.setRemark(remark);
+
+        // 🔥 在备注中标记类型（可选，方便后续查看）
+        String typeLabel = ownerType.equals("tenant") ? "[租户]" : "[业主]";
+        if (remark != null && !remark.isEmpty()) {
+            owner.setRemark(typeLabel + " " + remark);
+        } else {
+            owner.setRemark(typeLabel);
+        }
 
         // 解析日期
         if (registerDateStr != null && !registerDateStr.isEmpty()) {
@@ -163,10 +182,34 @@ public class OwnerServlet extends BaseServlet {
         }
 
         try {
-            boolean success = ownerService.addOwner(owner, password);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = ownerService.addOwner(owner, password, currentUser.getUserId(), req);
             if (success) {
-                logger.info("添加业主成功: {} - {}", owner.getOwnerId(), ownerName);
-                writeSuccess(resp, "添加业主成功", owner.getOwnerId());
+                // 🔥 根据业主类型自动更新房屋状态
+                // ✅ 修复：直接传递 String 类型的 userId
+                boolean houseUpdated = updateHouseStatusByOwnerType(
+                        houseId,
+                        ownerType,
+                        owner.getOwnerId(),
+                        currentUser.getUserId(),  // ✅ String 类型
+                        req
+                );
+
+                String statusInfo = "";
+                if (houseUpdated) {
+                    if ("owner".equals(ownerType)) {
+                        statusInfo = "，房屋已标记为【已售+已入住】";
+                    } else if ("tenant".equals(ownerType)) {
+                        statusInfo = "，房屋已标记为【已租+出租中】";
+                    }
+                }
+
+                logger.info("添加业主成功: {} - {} (类型: {}){}",
+                        owner.getOwnerId(), ownerName,
+                        ownerType.equals("tenant") ? "租户" : "业主",
+                        statusInfo);
+
+                writeSuccess(resp, "添加业主成功" + statusInfo, owner.getOwnerId());
             } else {
                 writeError(resp, "添加业主失败");
             }
@@ -180,12 +223,109 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * 更新业主
+     * 🔥 根据业主类型自动更新房屋状态（不需要修改数据库表）
+     * @param houseId 房屋ID
+     * @param ownerType 业主类型（owner/tenant）
+     * @param ownerId 业主ID
+     * @param operatorId 操作员ID（String类型，会在方法内转换为Integer）
+     * @param req HTTP请求对象
+     * @return 是否更新成功
+     */
+    /**
+     * 🔥 根据业主类型自动更新房屋状态（不需要修改数据库表）
+     * @param houseId 房屋ID
+     * @param ownerType 业主类型（owner/tenant）
+     * @param ownerId 业主ID
+     * @param operatorId 操作员ID（Integer类型）
+     * @param req HTTP请求对象
+     * @return 是否更新成功
+     */
+    private boolean updateHouseStatusByOwnerType(String houseId, String ownerType, String ownerId,
+                                                 Integer operatorId, HttpServletRequest req) {
+        try {
+            HouseService houseService = new HouseService();
+            House house = houseService.findById(houseId);
+
+            if (house == null) {
+                logger.warn("房屋不存在: {}", houseId);
+                return false;
+            }
+
+            String oldSaleStatus = house.getSaleStatus();
+            String oldHouseStatus = house.getHouseStatus();
+
+            // 🔥 根据业主类型设置房屋状态
+            if ("owner".equals(ownerType)) {
+                // 业主 → 已售 + 已入住
+                house.setSaleStatus("sold");
+                house.setHouseStatus("occupied");
+                logger.info("房屋 {} 标记为已售+已入住（业主: {}）", houseId, ownerId);
+            } else if ("tenant".equals(ownerType)) {
+                // 租户 → 已租 + 出租中
+                house.setSaleStatus("leased");
+                house.setHouseStatus("rented");
+                logger.info("房屋 {} 标记为已租+出租中（租户: {}）", houseId, ownerId);
+            } else {
+                // 未知类型，不更新
+                logger.warn("未知的业主类型: {}", ownerType);
+                return false;
+            }
+
+            // 设置业主ID
+            house.setOwnerId(ownerId);
+
+            // 🔥 直接使用 Integer 类型的 operatorId
+            boolean success = houseService.updateHouse(house, operatorId, req);
+
+            if (success) {
+                logger.info("房屋状态更新成功: {} → sale_status: {} → {}, house_status: {} → {}",
+                        houseId,
+                        oldSaleStatus, house.getSaleStatus(),
+                        oldHouseStatus, house.getHouseStatus());
+
+                // 🔥 记录房屋状态变更日志（使用 LogUtil）
+                if (operatorId != null) {
+                    String typeLabel = "owner".equals(ownerType) ? "业主" : "租户";
+                    String logContent = String.format(
+                            "添加%s【%s】后自动更新房屋状态：%s → sale_status: %s → %s, house_status: %s → %s",
+                            typeLabel,
+                            ownerId,
+                            houseId,
+                            oldSaleStatus, house.getSaleStatus(),
+                            oldHouseStatus, house.getHouseStatus()
+                    );
+
+                    LogUtil.log(
+                            operatorId,
+                            "admin_" + operatorId,
+                            "house_status_update",
+                            logContent,
+                            LogUtil.getClientIP(req)
+                    );
+                }
+
+                return true;
+            } else {
+                logger.error("房屋状态更新失败: {}", houseId);
+                return false;
+            }
+
+        } catch (Exception e) {
+            logger.error("更新房屋状态失败: {}", houseId, e);
+            return false;
+        }
+    }
+
+    /**
+     * ✅ 更新业主（增加日志记录）
      */
     public void update(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String ownerId = getStringParameter(req, "ownerId");
         if (ownerId == null || ownerId.isEmpty()) {
@@ -226,7 +366,8 @@ public class OwnerServlet extends BaseServlet {
         owner.setRemark(remark);
 
         try {
-            boolean success = ownerService.updateOwner(owner);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = ownerService.updateOwner(owner, currentUser.getUserId(), req);
             if (success) {
                 logger.info("更新业主成功: {} - {}", ownerId, ownerName);
                 writeSuccess(resp, "更新业主成功");
@@ -243,12 +384,15 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * 删除业主
+     * ✅ 删除业主（增加日志记录）
      */
     public void delete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String ownerId = getStringParameter(req, "ownerId");
         if (ownerId == null || ownerId.isEmpty()) {
@@ -257,7 +401,8 @@ public class OwnerServlet extends BaseServlet {
         }
 
         try {
-            boolean success = ownerService.deleteOwner(ownerId);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = ownerService.deleteOwner(ownerId, currentUser.getUserId(), req);
             if (success) {
                 logger.info("删除业主成功: {}", ownerId);
                 writeSuccess(resp, "删除业主成功");
@@ -289,7 +434,7 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 新增：导出所有业主数据
+     * ✅ 导出所有业主数据
      */
     public void export(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {
@@ -337,7 +482,7 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 新增：导出选中的业主数据
+     * ✅ 导出选中的业主数据
      */
     public void exportSelected(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {
@@ -389,12 +534,15 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 新增：批量删除业主
+     * ✅ 批量删除业主（增加日志记录）
      */
     public void batchDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String idsParam = getStringParameter(req, "ids");
         if (idsParam == null || idsParam.trim().isEmpty()) {
@@ -411,7 +559,8 @@ public class OwnerServlet extends BaseServlet {
 
             for (String id : idArray) {
                 try {
-                    boolean success = ownerService.deleteOwner(id.trim());
+                    // ✅ 传入 operatorId 和 request 记录日志
+                    boolean success = ownerService.deleteOwner(id.trim(), currentUser.getUserId(), req);
                     if (success) {
                         successCount++;
                     } else {
@@ -438,7 +587,7 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 新增：统计业主信息
+     * ✅ 统计业主信息
      */
     public void statistics(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {
@@ -469,12 +618,15 @@ public class OwnerServlet extends BaseServlet {
     }
 
     /**
-     * ✅ 新增：重置业主密码
+     * ✅ 重置业主密码（增加日志记录）
      */
     public void resetPassword(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin")) {
             return;
         }
+
+        // 获取当前用户
+        User currentUser = getCurrentUser(req);
 
         String ownerId = getStringParameter(req, "ownerId");
         String newPassword = getStringParameter(req, "newPassword");
@@ -490,7 +642,8 @@ public class OwnerServlet extends BaseServlet {
         }
 
         try {
-            boolean success = ownerService.resetPassword(ownerId, newPassword);
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = ownerService.resetPassword(ownerId, newPassword, currentUser.getUserId(), req);
             if (success) {
                 logger.info("重置业主密码成功: {}", ownerId);
                 writeSuccess(resp, "重置密码成功");
@@ -502,8 +655,9 @@ public class OwnerServlet extends BaseServlet {
             writeError(resp, "重置密码失败：" + e.getMessage());
         }
     }
+
     /**
-     * 🔥 新增：查询业主的所有房屋
+     * 🔥 查询业主的所有房屋
      */
     public void findHouses(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!checkRole(req, resp, "admin", "finance")) {

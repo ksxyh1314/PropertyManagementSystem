@@ -1,5 +1,7 @@
 package com.property.servlet.owner;
 
+import com.property.dao.HouseDao;
+import com.property.entity.House;
 import com.property.entity.Owner;
 import com.property.entity.User;
 import com.property.service.OwnerService;
@@ -15,16 +17,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 业主端 - 个人信息管理
+ * 业主端 - 个人信息管理（✅ 增加房屋详情查询）
  */
 @WebServlet("/owner/info")
 public class OwnerInfoServlet extends BaseServlet {
     private static final Logger logger = LoggerFactory.getLogger(OwnerInfoServlet.class);
     private OwnerService ownerService = new OwnerService();
     private UserService userService = new UserService();
+    private HouseDao houseDao = new HouseDao();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -43,6 +47,9 @@ public class OwnerInfoServlet extends BaseServlet {
         switch (action) {
             case "detail":
                 detail(req, resp);
+                break;
+            case "houseDetail":  // 🔥 新增
+                houseDetail(req, resp);
                 break;
             default:
                 writeError(resp, "未知操作: " + action);
@@ -76,7 +83,7 @@ public class OwnerInfoServlet extends BaseServlet {
     }
 
     /**
-     * 获取业主详细信息
+     * 获取业主详细信息（✅ 增加房屋数量统计）
      */
     public void detail(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpSession session = req.getSession();
@@ -90,9 +97,16 @@ public class OwnerInfoServlet extends BaseServlet {
         logger.info("🔍 查询业主信息: ownerId={}", ownerId);
 
         try {
+            // 1. 查询业主基本信息
             Owner owner = ownerService.findById(ownerId);
             if (owner != null) {
-                // 转换为前端需要的格式
+                // 2. 🔥 查询业主名下的房屋列表
+                List<House> houses = houseDao.findByOwnerId(ownerId);
+                int houseCount = houses != null ? houses.size() : 0;
+
+                logger.info("📊 业主 {} 名下房屋数量: {}", owner.getOwnerName(), houseCount);
+
+                // 3. 转换为前端需要的格式
                 Map<String, Object> result = new HashMap<>();
                 result.put("ownerId", owner.getOwnerId());
                 result.put("ownerName", owner.getOwnerName());
@@ -104,7 +118,11 @@ public class OwnerInfoServlet extends BaseServlet {
                 result.put("registerDate", owner.getRegisterDate());
                 result.put("remark", owner.getRemark());
 
-                logger.info("✅ 查询成功: {}", owner.getOwnerName());
+                // 🔥 新增：房屋数量和房屋列表
+                result.put("houseCount", houseCount);
+                result.put("houses", houses);
+
+                logger.info("✅ 查询成功: {} (房屋数量: {})", owner.getOwnerName(), houseCount);
                 writeSuccess(resp, "查询成功", result);
             } else {
                 logger.warn("⚠️ 业主不存在: {}", ownerId);
@@ -117,7 +135,75 @@ public class OwnerInfoServlet extends BaseServlet {
     }
 
     /**
-     * 更新业主基本信息
+     * 🏠 查询房屋详情（新增）
+     */
+    public void houseDetail(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession();
+        String currentOwnerId = (String) session.getAttribute("username");
+
+        if (currentOwnerId == null || currentOwnerId.trim().isEmpty()) {
+            writeError(resp, "未登录或登录已过期");
+            return;
+        }
+
+        String houseId = getStringParameter(req, "houseId");
+
+        logger.info("========================================");
+        logger.info("🏠 查询房屋详情");
+        logger.info("  houseId: {}", houseId);
+        logger.info("  currentOwnerId: {}", currentOwnerId);
+        logger.info("========================================");
+
+        if (houseId == null || houseId.trim().isEmpty()) {
+            logger.warn("⚠️ 房屋编号为空");
+            writeError(resp, "房屋编号不能为空");
+            return;
+        }
+
+        try {
+            // 1. 查询房屋信息
+            House house = houseDao.findById(houseId);
+
+            if (house == null) {
+                logger.warn("⚠️ 房屋不存在: houseId={}", houseId);
+                writeError(resp, "房屋不存在");
+                return;
+            }
+
+            // 2. 验证房屋是否属于当前业主
+            if (!currentOwnerId.equals(house.getOwnerId())) {
+                logger.warn("⚠️ 无权查看此房屋");
+                logger.warn("  当前业主: {}", currentOwnerId);
+                logger.warn("  房屋业主: {}", house.getOwnerId());
+                writeError(resp, "无权查看此房屋信息");
+                return;
+            }
+
+            // 3. 查询业主信息（补充房屋的业主姓名和电话）
+            Owner owner = ownerService.findById(house.getOwnerId());
+            if (owner != null) {
+                house.setOwnerName(owner.getOwnerName());
+                house.setOwnerPhone(owner.getPhone());
+            }
+
+            logger.info("✅ 查询成功");
+            logger.info("  房屋编号: {}", house.getHouseId());
+            logger.info("  楼栋: {}栋 {}单元 {}层",
+                    house.getBuildingNo(), house.getUnitNo(), house.getFloor());
+            logger.info("  面积: {} m²", house.getArea());
+            logger.info("  户型: {}", house.getLayout());
+            logger.info("========================================");
+
+            writeSuccess(resp, "查询成功", house);
+
+        } catch (Exception e) {
+            logger.error("❌ 查询房屋详情失败", e);
+            writeError(resp, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * ✅ 更新业主基本信息（增加日志记录）
      */
     public void updateInfo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpSession session = req.getSession();
@@ -127,6 +213,9 @@ public class OwnerInfoServlet extends BaseServlet {
             writeError(resp, "未登录或登录已过期");
             return;
         }
+
+        // 🔥 获取当前用户（业主）
+        User currentUser = getCurrentUser(req);
 
         String phone = getStringParameter(req, "phone");
         String email = getStringParameter(req, "email");
@@ -146,12 +235,19 @@ public class OwnerInfoServlet extends BaseServlet {
         }
 
         try {
-            Owner owner = new Owner();
-            owner.setOwnerId(ownerId);
-            owner.setPhone(phone);
-            owner.setEmail(email);
+            // 🔥 先查询完整的业主信息（因为 updateOwner 需要必填字段）
+            Owner existOwner = ownerService.findById(ownerId);
+            if (existOwner == null) {
+                writeError(resp, "业主信息不存在");
+                return;
+            }
 
-            boolean success = ownerService.updateOwner(owner);
+            // 🔥 只更新允许修改的字段
+            existOwner.setPhone(phone);
+            existOwner.setEmail(email);
+
+            // ✅ 传入 operatorId 和 request 记录日志
+            boolean success = ownerService.updateOwner(existOwner, currentUser.getUserId(), req);
             if (success) {
                 logger.info("✅ 更新成功");
                 writeSuccess(resp, "更新成功", null);
@@ -166,7 +262,7 @@ public class OwnerInfoServlet extends BaseServlet {
     }
 
     /**
-     * 修改密码
+     * ✅ 修改密码（增加日志记录）
      */
     public void updatePassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpSession session = req.getSession();
@@ -176,6 +272,9 @@ public class OwnerInfoServlet extends BaseServlet {
             writeError(resp, "未登录或登录已过期");
             return;
         }
+
+        // 🔥 获取当前用户（业主）
+        User currentUser = getCurrentUser(req);
 
         String oldPassword = getStringParameter(req, "oldPassword");
         String newPassword = getStringParameter(req, "newPassword");
@@ -227,8 +326,8 @@ public class OwnerInfoServlet extends BaseServlet {
                 return;
             }
 
-            // 更新密码
-            boolean success = userService.updatePassword(username, newPassword);
+            // ✅ 更新密码（传入 operatorId 和 request 记录日志）
+            boolean success = userService.updatePassword(username, newPassword, currentUser.getUserId(), req);
             if (success) {
                 logger.info("✅ 密码修改成功");
 
