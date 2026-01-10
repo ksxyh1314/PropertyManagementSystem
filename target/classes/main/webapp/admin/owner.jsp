@@ -156,7 +156,7 @@
 
         .house-search-input {
             width: 100%;
-            padding: 8px 65px 8px 12px;  /* 🔥 右侧留出空间 */
+            padding: 8px 65px 8px 12px;
             border: 1px solid #ced4da;
             border-radius: 0.25rem;
             font-size: 14px;
@@ -167,6 +167,14 @@
             border-color: #667eea;
             outline: none;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .house-search-input.is-invalid {
+            border-color: #dc3545;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
         }
 
         .house-dropdown {
@@ -237,7 +245,7 @@
         /* 🔥 清除按钮样式 */
         .clear-house-btn {
             position: absolute;
-            right: 35px;  /* 🔥 为下拉箭头留出空间 */
+            right: 35px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
@@ -270,6 +278,98 @@
             color: #999;
             pointer-events: none;
             font-size: 14px;
+        }
+
+        /* 🔥 业主类型选择样式 */
+        .owner-type-wrapper {
+            display: flex;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .owner-type-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .owner-type-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .owner-type-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .owner-type-option input[type="radio"]:checked + .owner-type-label {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .owner-type-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            transition: transform 0.3s;
+        }
+
+        .owner-type-option input[type="radio"]:checked + .owner-type-label .owner-type-icon {
+            transform: scale(1.2);
+        }
+
+        .owner-type-text {
+            flex: 1;
+        }
+
+        .owner-type-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .owner-type-desc {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .owner-type-option input[type="radio"]:checked + .owner-type-label .owner-type-title {
+            color: #667eea;
+        }
+
+        /* 🔥 错误提示样式 */
+        .invalid-feedback {
+            display: none;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #dc3545;
+        }
+
+        .invalid-feedback.show {
+            display: block;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            padding-right: calc(1.5em + 0.75rem);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
+        .form-control.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
         }
     </style>
 </head>
@@ -379,10 +479,44 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="ownerForm">
+                <form id="ownerForm" novalidate>
                     <input type="hidden" id="formMethod" value="add">
                     <input type="hidden" id="originalOwnerId">
                     <input type="hidden" id="selectedHouseId">
+
+                    <!-- 🔥 业主类型选择 -->
+                    <div class="form-group" id="ownerTypeGroup">
+                        <label class="form-label required">业主类型</label>
+                        <div class="owner-type-wrapper">
+                            <div class="owner-type-option">
+                                <input type="radio" name="ownerType" id="ownerTypeOwner" value="owner" checked>
+                                <label for="ownerTypeOwner" class="owner-type-label">
+                                    <div class="owner-type-icon">
+                                        <i class="fas fa-user-tie" style="color: #667eea;"></i>
+                                    </div>
+                                    <div class="owner-type-text">
+                                        <div class="owner-type-title">业主</div>
+                                        <div class="owner-type-desc">房屋所有权人</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="owner-type-option">
+                                <input type="radio" name="ownerType" id="ownerTypeTenant" value="tenant">
+                                <label for="ownerTypeTenant" class="owner-type-label">
+                                    <div class="owner-type-icon">
+                                        <i class="fas fa-user" style="color: #f093fb;"></i>
+                                    </div>
+                                    <div class="owner-type-text">
+                                        <div class="owner-type-title">租户</div>
+                                        <div class="owner-type-desc">房屋租赁人</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 业主：房屋将标记为【已售+已入住】；租户：房屋将标记为【已租+出租中】
+                        </small>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6">
@@ -390,6 +524,9 @@
                                 <label class="form-label required">业主姓名</label>
                                 <input type="text" class="form-control" id="ownerName"
                                        name="ownerName" required placeholder="请输入业主姓名">
+                                <div class="invalid-feedback" id="ownerNameError">
+                                    <i class="fas fa-exclamation-circle"></i> 请输入业主姓名
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -398,6 +535,9 @@
                                 <input type="text" class="form-control" id="phone"
                                        name="phone" required placeholder="请输入11位手机号"
                                        pattern="^1[3-9]\d{9}$">
+                                <div class="invalid-feedback" id="phoneError">
+                                    <i class="fas fa-exclamation-circle"></i> 请输入正确的11位手机号
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -409,6 +549,9 @@
                                 <input type="text" class="form-control" id="idCard"
                                        name="idCard" required placeholder="请输入18位身份证号"
                                        pattern="^\d{17}[\dXx]$">
+                                <div class="invalid-feedback" id="idCardError">
+                                    <i class="fas fa-exclamation-circle"></i> 请输入正确的18位身份证号
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -430,6 +573,9 @@
                                     </span>
                                     <div class="house-dropdown" id="houseDropdown"></div>
                                 </div>
+                                <div class="invalid-feedback" id="houseIdError">
+                                    <i class="fas fa-exclamation-circle"></i> 请选择房屋编号
+                                </div>
                                 <small class="form-text text-muted">
                                     <i class="fas fa-lightbulb"></i> 支持输入：房屋编号、楼栋（如"1栋"、"01"）、户型（如"三室"）
                                 </small>
@@ -443,6 +589,9 @@
                                 <label class="form-label">电子邮箱</label>
                                 <input type="email" class="form-control" id="email"
                                        name="email" placeholder="请输入邮箱地址">
+                                <div class="invalid-feedback" id="emailError">
+                                    <i class="fas fa-exclamation-circle"></i> 请输入正确的邮箱地址
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -467,6 +616,9 @@
                                 <label class="form-label required">登录密码</label>
                                 <input type="password" class="form-control" id="password"
                                        name="password" placeholder="8位以上，包含字母和数字">
+                                <div class="invalid-feedback" id="passwordError">
+                                    <i class="fas fa-exclamation-circle"></i> 密码必须8位以上
+                                </div>
                                 <small class="text-muted">密码必须8位以上，且包含字母和数字</small>
                             </div>
                         </div>
@@ -524,6 +676,27 @@
         // 🔥 初始化房屋搜索框
         initHouseSearch();
 
+        // 🔥 实时验证
+        $('#ownerName').on('blur', function() {
+            validateOwnerName();
+        });
+
+        $('#phone').on('blur', function() {
+            validatePhone();
+        });
+
+        $('#idCard').on('blur', function() {
+            validateIdCard();
+        });
+
+        $('#email').on('blur', function() {
+            validateEmail();
+        });
+
+        $('#password').on('blur', function() {
+            validatePassword();
+        });
+
         // 点击页面其他地方关闭下拉框
         $(document).click(function(e) {
             if (!$(e.target).closest('.house-select-wrapper').length) {
@@ -533,13 +706,103 @@
     });
 
     /**
-     * ✨ 修复: 新增辅助函数，用于格式化房屋ID。
-     * 解决从后端接收的房屋ID（如 110102）因被当作数字处理而丢失前导零的问题。
-     * 此函数确保ID始终为7位字符串，不足时在前面补零（例如，将 110102 转换为 '0110102'）。
+     * 🔥 表单验证函数
+     */
+    function validateOwnerName() {
+        var value = $('#ownerName').val().trim();
+        if (!value) {
+            $('#ownerName').addClass('is-invalid');
+            $('#ownerNameError').addClass('show').text('请输入业主姓名');
+            return false;
+        }
+        $('#ownerName').removeClass('is-invalid');
+        $('#ownerNameError').removeClass('show');
+        return true;
+    }
+
+    function validatePhone() {
+        var value = $('#phone').val().trim();
+        if (!value) {
+            $('#phone').addClass('is-invalid');
+            $('#phoneError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入联系电话');
+            return false;
+        }
+        if (!/^1[3-9]\d{9}$/.test(value)) {
+            $('#phone').addClass('is-invalid');
+            $('#phoneError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入正确的11位手机号（如：13800138000）');
+            return false;
+        }
+        $('#phone').removeClass('is-invalid');
+        $('#phoneError').removeClass('show');
+        return true;
+    }
+
+    function validateIdCard() {
+        var value = $('#idCard').val().trim();
+        if (!value) {
+            $('#idCard').addClass('is-invalid');
+            $('#idCardError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入身份证号');
+            return false;
+        }
+        if (!/^\d{17}[\dXx]$/.test(value)) {
+            $('#idCard').addClass('is-invalid');
+            $('#idCardError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入正确的18位身份证号（如：110101199001011234）');
+            return false;
+        }
+        $('#idCard').removeClass('is-invalid');
+        $('#idCardError').removeClass('show');
+        return true;
+    }
+
+    function validateEmail() {
+        var value = $('#email').val().trim();
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            $('#email').addClass('is-invalid');
+            $('#emailError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入正确的邮箱地址（如：example@email.com）');
+            return false;
+        }
+        $('#email').removeClass('is-invalid');
+        $('#emailError').removeClass('show');
+        return true;
+    }
+
+    function validatePassword() {
+        var method = $('#formMethod').val();
+        if (method === 'add') {
+            var value = $('#password').val();
+            if (!value) {
+                $('#password').addClass('is-invalid');
+                $('#passwordError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请输入登录密码');
+                return false;
+            }
+            if (value.length < 8) {
+                $('#password').addClass('is-invalid');
+                $('#passwordError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 密码必须至少8位');
+                return false;
+            }
+            $('#password').removeClass('is-invalid');
+            $('#passwordError').removeClass('show');
+        }
+        return true;
+    }
+
+    function validateHouseId() {
+        var value = $('#selectedHouseId').val();
+        if (!value) {
+            $('#houseSearchInput').addClass('is-invalid');
+            $('#houseIdError').addClass('show').html('<i class="fas fa-exclamation-circle"></i> 请选择房屋编号');
+            return false;
+        }
+        $('#houseSearchInput').removeClass('is-invalid');
+        $('#houseIdError').removeClass('show');
+        return true;
+    }
+
+    /**
+     * ✨ 修复: 新增辅助函数，用于格式化房屋ID
      */
     function formatHouseId(houseId) {
         if (!houseId) return '-';
-        // 使用 String.padStart() 方法来补全前导零
         return String(houseId).padStart(7, '0');
     }
 
@@ -571,7 +834,6 @@
                 console.log('原始输入:', keyword, '解析后:', parsedKeyword);
 
                 var filtered = allHouses.filter(function(house) {
-                    // ✨ 修复: 确保将房屋ID转换为字符串进行搜索，以防其为数字类型
                     var houseIdStr = String(house.houseId).toLowerCase();
                     var buildingNo = String(house.buildingNo).toLowerCase();
                     var layout = (house.layout || '').toLowerCase();
@@ -603,12 +865,10 @@
                 if (keyword === '') {
                     renderHouseDropdown(allHouses);
                 } else {
-                    // 触发搜索
                     $input.trigger('input');
                 }
                 $dropdown.addClass('show');
             } else {
-                // 如果没有房屋数据，尝试加载
                 loadVacantHouses();
             }
         });
@@ -620,6 +880,8 @@
             $hiddenInput.val('');
             $clearBtn.removeClass('show');
             $dropdown.removeClass('show');
+            $input.removeClass('is-invalid');
+            $('#houseIdError').removeClass('show');
             $input.focus();
         });
 
@@ -633,16 +895,14 @@
 
     /**
      * 🔥 智能解析房屋关键词
-     * 支持：1栋 -> 01, 三室 -> 三室, 01010101 -> 01010101
      */
     function parseHouseKeyword(keyword) {
         keyword = keyword.trim().toLowerCase();
 
-        // 1. 解析楼栋：1栋、一栋、01栋 -> 01
+        // 1. 解析楼栋
         var buildingMatch = keyword.match(/^(\d+|[一二三四五六七八九十]+)栋?$/);
         if (buildingMatch) {
             var num = buildingMatch[1];
-            // 中文数字转阿拉伯数字
             var chineseNum = {
                 '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
                 '六': 6, '七': 7, '八': 8, '九': 9, '十': 10
@@ -650,11 +910,10 @@
             if (chineseNum[num]) {
                 num = chineseNum[num];
             }
-            // 补齐为两位数
             return String(num).padStart(2, '0');
         }
 
-        // 2. 解析单元：1单元、一单元 -> 1
+        // 2. 解析单元
         var unitMatch = keyword.match(/^(\d+|[一二三四五六七八九])单元?$/);
         if (unitMatch) {
             var num = unitMatch[1];
@@ -668,7 +927,7 @@
             return String(num);
         }
 
-        // 3. 解析楼层：1层、一层、01层 -> 01
+        // 3. 解析楼层
         var floorMatch = keyword.match(/^(\d+|[一二三四五六七八九十]+)层?$/);
         if (floorMatch) {
             var num = floorMatch[1];
@@ -682,7 +941,7 @@
             return String(num).padStart(2, '0');
         }
 
-        // 4. 解析户型：三室、3室 -> 三室
+        // 4. 解析户型
         var layoutMatch = keyword.match(/^([一二三四五六七八九]|[1-9])室/);
         if (layoutMatch) {
             var num = layoutMatch[1];
@@ -696,14 +955,13 @@
             return keyword;
         }
 
-        // 5. 纯数字：自动补齐为两位
+        // 5. 纯数字
         if (/^\d+$/.test(keyword)) {
             if (keyword.length === 1) {
                 return keyword.padStart(2, '0');
             }
         }
 
-        // 6. 其他情况：返回原始关键词
         return keyword;
     }
 
@@ -727,12 +985,11 @@
 
         houses.forEach(function(house) {
             var $item = $('<div class="house-dropdown-item"></div>');
-            // ✨ 修复: 在下拉列表中显示房屋ID时，使用格式化函数
             var formattedHouseId = formatHouseId(house.houseId);
             $item.html(
                 '<div class="house-info-id">' +
                 '<i class="fas fa-home" style="margin-right: 5px; color: #667eea;"></i>' +
-                formattedHouseId + // 使用格式化后的ID
+                formattedHouseId +
                 '</div>' +
                 '<div class="house-info-detail">' +
                 '<i class="fas fa-building" style="margin-right: 3px;"></i> 楼栋: ' + house.buildingNo + ' | ' +
@@ -741,19 +998,17 @@
                 '</div>'
             );
             $item.on('click', function() {
-                // ✅ 判断是否有完整的房屋信息
                 if (house.layout && house.layout !== '-' && house.area && house.area !== '-') {
-                    // 有完整信息，显示详细信息
                     $('#houseSearchInput').val(formattedHouseId + ' (' + house.layout + ', ' + house.area + '㎡)');
                 } else {
-                    // 信息不完整，只显示房屋编号
                     $('#houseSearchInput').val(formattedHouseId);
                 }
                 $('#selectedHouseId').val(formattedHouseId);
                 $('#clearHouseBtn').addClass('show');
+                $('#houseSearchInput').removeClass('is-invalid');
+                $('#houseIdError').removeClass('show');
                 $dropdown.removeClass('show');
             });
-
 
             $dropdown.append($item);
         });
@@ -818,11 +1073,9 @@
         }
 
         $.each(owners, function(i, owner) {
-            // 🔥 构建房产信息显示（主房产 + 数量）
             var houseInfo = '';
 
             if (owner.houseId) {
-                // 🔥 解析并格式化主房产编号
                 var houseId = formatHouseId(owner.houseId);
                 var buildingNo = houseId.substring(0, 2);
                 var unitNo = houseId.substring(2, 3);
@@ -839,7 +1092,6 @@
                     '</div>';
             }
 
-            // 🔥 如果有房屋数量，显示可点击的链接
             if (owner.houseCount && owner.houseCount > 0) {
                 houseInfo += '<span style="color: #667eea; cursor: pointer; text-decoration: underline; font-size: 13px;" ' +
                     'onclick="viewOwnerHouses(\'' + owner.ownerId + '\')" title="点击查看所有房产">' +
@@ -847,12 +1099,10 @@
                     '</span>';
             }
 
-            // 如果没有任何房产信息，显示 "-"
             if (!houseInfo) {
                 houseInfo = '<span style="color: #999;">-</span>';
             }
 
-            // 🔥 构建表格行
             var row = '<tr>' +
                 '<td class="checkbox-cell"><input type="checkbox" class="row-checkbox" value="' + (owner.ownerId || '') + '"></td>' +
                 '<td>' + (owner.ownerId || '-') + '</td>' +
@@ -880,7 +1130,6 @@
         });
     }
 
-
     /**
      * 渲染分页
      */
@@ -893,7 +1142,6 @@
 
         if (totalPages <= 1) return;
 
-        // 上一页
         var prevDisabled = currentPage === 1 ? 'disabled' : '';
         pagination.append(
             '<li class="page-item ' + prevDisabled + '">' +
@@ -901,7 +1149,6 @@
             '</li>'
         );
 
-        // 页码
         var startPage = Math.max(1, currentPage - 2);
         var endPage = Math.min(totalPages, currentPage + 2);
 
@@ -932,7 +1179,6 @@
             );
         }
 
-        // 下一页
         var nextDisabled = currentPage === totalPages ? 'disabled' : '';
         pagination.append(
             '<li class="page-item ' + nextDisabled + '">' +
@@ -950,11 +1196,9 @@
             success: function(response) {
                 console.log('空置房屋响应:', response);
                 if ((response.success || response.code === 200) && response.data) {
-                    // ✅ 添加详细调试信息
                     console.log('原始房屋数据示例:', response.data[0]);
 
                     allHouses = response.data.map(function(house) {
-                        // ✅ 打印每个房屋的原始数据
                         console.log('处理房屋:', house);
 
                         house.houseId = formatHouseId(house.houseId);
@@ -971,7 +1215,6 @@
             }
         });
     }
-
 
     /**
      * 全选/取消全选
@@ -1009,17 +1252,23 @@
         $('#passwordGroup').show();
         $('#password').prop('required', true);
 
+        // 🔥 显示业主类型选择
+        $('#ownerTypeGroup').show();
+        $('#ownerTypeOwner').prop('checked', true);
+
+        // 🔥 清除所有错误提示
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').removeClass('show');
+
         var today = new Date().toISOString().split('T')[0];
         $('#registerDate').val(today);
         $('#memberCount').val(1);
 
-        // 🔥 重置房屋选择
         $('#houseSearchInput').val('');
         $('#selectedHouseId').val('');
         $('#clearHouseBtn').removeClass('show');
         $('#houseDropdown').removeClass('show');
 
-        // 🔥 加载空置房屋
         loadVacantHouses();
 
         $('#ownerModal').modal('show');
@@ -1040,7 +1289,6 @@
                 if ((response.success || response.code === 200) && response.data) {
                     var owner = response.data;
 
-                    // 🔥 解析并格式化房屋编号
                     var houseId = formatHouseId(owner.houseId);
                     var buildingNo = houseId.substring(0, 2);
                     var unitNo = houseId.substring(2, 3);
@@ -1141,7 +1389,6 @@
         });
     }
 
-
     /**
      * 编辑业主
      */
@@ -1151,6 +1398,13 @@
         $('#formMethod').val('update');
         $('#passwordGroup').hide();
         $('#password').prop('required', false);
+
+        // 🔥 隐藏业主类型选择（编辑时不允许修改类型）
+        $('#ownerTypeGroup').hide();
+
+        // 🔥 清除所有错误提示
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').removeClass('show');
 
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/owner',
@@ -1171,10 +1425,8 @@
                     $('#registerDate').val(formatDateForInput(owner.registerDate));
                     $('#remark').val(owner.remark);
 
-                    // ✅ 格式化房屋ID
                     var formattedHouseId = formatHouseId(owner.houseId);
 
-                    // 🔥 先加载空置房屋，然后设置当前房屋
                     $.ajax({
                         url: '${pageContext.request.contextPath}/admin/house',
                         type: 'GET',
@@ -1183,7 +1435,6 @@
                             console.log('空置房屋响应:', houseResponse);
 
                             if ((houseResponse.success || houseResponse.code === 200) && houseResponse.data) {
-                                // ✅ 处理房屋数据
                                 allHouses = houseResponse.data.map(function(house) {
                                     return {
                                         houseId: formatHouseId(house.houseId),
@@ -1198,13 +1449,11 @@
                                 console.log('✅ 空置房屋加载完成，共 ' + allHouses.length + ' 个房屋');
                                 console.log('处理后的房屋数据示例:', allHouses[0]);
 
-                                // ✅ 添加当前房屋到列表（如果不在空置列表中）
                                 var houseExists = allHouses.some(function(h) {
                                     return h.houseId === formattedHouseId;
                                 });
 
                                 if (!houseExists && owner.houseId) {
-                                    // 🔥 尝试从后端获取当前房屋的完整信息
                                     $.ajax({
                                         url: '${pageContext.request.contextPath}/admin/house',
                                         type: 'GET',
@@ -1222,7 +1471,6 @@
                                                     area: currentHouse.area || currentHouse.houseArea || '-'
                                                 });
                                             } else {
-                                                // 如果获取失败，添加基本信息
                                                 allHouses.unshift({
                                                     houseId: formattedHouseId,
                                                     buildingNo: formattedHouseId.substring(0, 2),
@@ -1233,7 +1481,6 @@
                                             setHouseInput(formattedHouseId);
                                         },
                                         error: function() {
-                                            // 如果请求失败，添加基本信息
                                             allHouses.unshift({
                                                 houseId: formattedHouseId,
                                                 buildingNo: formattedHouseId.substring(0, 2),
@@ -1250,7 +1497,6 @@
                         },
                         error: function() {
                             console.error('❌ 加载空置房屋失败');
-                            // 即使加载失败，也要设置房屋信息
                             $('#houseSearchInput').val(formattedHouseId);
                             $('#selectedHouseId').val(formattedHouseId);
                             $('#clearHouseBtn').addClass('show');
@@ -1277,10 +1523,8 @@
         });
 
         if (selectedHouse && selectedHouse.layout !== '-' && selectedHouse.area !== '-') {
-            // 有完整信息，显示详细信息
             $('#houseSearchInput').val(selectedHouse.houseId + ' (' + selectedHouse.layout + ', ' + selectedHouse.area + '㎡)');
         } else {
-            // 信息不完整，只显示房屋编号
             $('#houseSearchInput').val(houseId);
         }
 
@@ -1288,23 +1532,54 @@
         $('#clearHouseBtn').addClass('show');
     }
 
-
     /**
-     * 保存业主
+     * 🔥 保存业主（增强版验证）
      */
     function saveOwner() {
-        var form = $('#ownerForm')[0];
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
+        // 🔥 清除所有错误提示
+        $('.form-control').removeClass('is-invalid');
+        $('.invalid-feedback').removeClass('show');
 
-        // 🔥 验证房屋是否选择
-        // ✨ 注释: 此处获取的 houseId 已经是通过下拉选择或编辑时设置好的、格式正确的字符串，无需再次处理
-        var houseId = $('#selectedHouseId').val();
-        if (!houseId) {
-            layer.msg('请选择房屋编号', {icon: 0});
-            $('#houseSearchInput').focus();
+        // 🔥 逐项验证
+        var isValid = true;
+
+        if (!validateOwnerName()) isValid = false;
+        if (!validatePhone()) isValid = false;
+        if (!validateIdCard()) isValid = false;
+        if (!validateHouseId()) isValid = false;
+        if (!validateEmail()) isValid = false;
+        if (!validatePassword()) isValid = false;
+
+        if (!isValid) {
+            // 🔥 显示醒目的错误提示
+            layer.alert(
+                '<div style="padding: 15px;">' +
+                '<div style="font-size: 18px; color: #dc3545; margin-bottom: 15px; text-align: center;">' +
+                '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px;"></i><br>' +
+                '<strong>表单验证失败</strong>' +
+                '</div>' +
+                '<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 5px; margin-bottom: 10px;">' +
+                '<div style="color: #856404; line-height: 1.8;">' +
+                '<i class="fas fa-info-circle"></i> 请检查以下信息：<br>' +
+                '• 确保所有必填项（标有 <span style="color: #dc3545;">*</span>）已填写<br>' +
+                '• 手机号格式：11位数字，如 13800138000<br>' +
+                '• 身份证号格式：18位，如 110101199001011234<br>' +
+                '• 邮箱格式：example@email.com<br>' +
+                '• 密码长度：至少8位' +
+                '</div>' +
+                '</div>' +
+                '<div style="text-align: center; color: #666; font-size: 14px;">' +
+                '红色标记的字段需要修正' +
+                '</div>' +
+                '</div>',
+                {
+                    icon: 0,
+                    title: false,
+                    closeBtn: 1,
+                    btn: ['<i class="fas fa-check"></i> 知道了'],
+                    btnAlign: 'c'
+                }
+            );
             return;
         }
 
@@ -1314,14 +1589,16 @@
             ownerName: $('#ownerName').val().trim(),
             phone: $('#phone').val().trim(),
             idCard: $('#idCard').val().trim(),
-            houseId: houseId,
+            houseId: $('#selectedHouseId').val(),
             email: $('#email').val().trim(),
             memberCount: $('#memberCount').val(),
             registerDate: $('#registerDate').val(),
             remark: $('#remark').val().trim()
         };
 
+        // 🔥 添加业主类型
         if (method === 'add') {
+            data.ownerType = $('input[name="ownerType"]:checked').val();
             data.password = $('#password').val();
         } else {
             data.ownerId = $('#originalOwnerId').val();
@@ -1329,31 +1606,113 @@
 
         console.log('提交数据:', data);
 
+        // 🔥 显示加载动画
+        var loadingIndex = layer.load(1, {
+            shade: [0.3, '#000'],
+            content: '<div style="color: white;">正在保存...</div>'
+        });
+
         $.ajax({
             url: '${pageContext.request.contextPath}/admin/owner',
             type: 'POST',
             data: data,
             success: function(response) {
+                layer.close(loadingIndex);
                 console.log('保存响应:', response);
+
                 if (response.success || response.code === 200) {
-                    layer.msg(response.message || '保存成功', {icon: 1});
-                    $('#ownerModal').modal('hide');
-                    loadOwnerList(currentPage);
+                    // 🔥 成功提示
+                    layer.alert(
+                        '<div style="padding: 20px; text-align: center;">' +
+                        '<div style="font-size: 48px; color: #28a745; margin-bottom: 15px;">' +
+                        '<i class="fas fa-check-circle"></i>' +
+                        '</div>' +
+                        '<div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 10px;">' +
+                        '保存成功！' +
+                        '</div>' +
+                        '<div style="color: #666; line-height: 1.6;">' +
+                        (response.message || '业主信息已成功保存') +
+                        '</div>' +
+                        '</div>',
+                        {
+                            icon: 0,
+                            title: false,
+                            closeBtn: 0,
+                            btn: ['<i class="fas fa-check"></i> 确定'],
+                            yes: function(index) {
+                                layer.close(index);
+                                $('#ownerModal').modal('hide');
+                                loadOwnerList(currentPage);
+                            }
+                        }
+                    );
                 } else {
-                    layer.msg(response.message || '保存失败', {icon: 2});
+                    // 🔥 失败提示
+                    layer.alert(
+                        '<div style="padding: 15px;">' +
+                        '<div style="font-size: 18px; color: #dc3545; margin-bottom: 15px; text-align: center;">' +
+                        '<i class="fas fa-times-circle" style="font-size: 48px; margin-bottom: 10px;"></i><br>' +
+                        '<strong>保存失败</strong>' +
+                        '</div>' +
+                        '<div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px; border-radius: 5px;">' +
+                        '<div style="color: #721c24; line-height: 1.6;">' +
+                        '<i class="fas fa-exclamation-circle"></i> ' + (response.message || '操作失败，请稍后重试') +
+                        '</div>' +
+                        '</div>' +
+                        '</div>',
+                        {
+                            icon: 0,
+                            title: false,
+                            closeBtn: 1,
+                            btn: ['<i class="fas fa-redo"></i> 重试']
+                        }
+                    );
                 }
             },
             error: function(xhr) {
+                layer.close(loadingIndex);
                 console.error('保存失败:', xhr);
-                var errorMsg = '网络错误';
+
+                var errorMsg = '网络错误，请检查网络连接后重试';
                 try {
                     var response = JSON.parse(xhr.responseText);
                     errorMsg = response.message || errorMsg;
                 } catch (e) {}
-                layer.msg(errorMsg, {icon: 2});
+
+                // 🔥 网络错误提示
+                layer.alert(
+                    '<div style="padding: 15px;">' +
+                    '<div style="font-size: 18px; color: #dc3545; margin-bottom: 15px; text-align: center;">' +
+                    '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 10px;"></i><br>' +
+                    '<strong>网络错误</strong>' +
+                    '</div>' +
+                    '<div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px; border-radius: 5px; margin-bottom: 10px;">' +
+                    '<div style="color: #721c24; line-height: 1.6;">' +
+                    '<i class="fas fa-exclamation-circle"></i> ' + errorMsg +
+                    '</div>' +
+                    '</div>' +
+                    '<div style="color: #666; font-size: 14px; line-height: 1.6;">' +
+                    '可能的原因：<br>' +
+                    '• 网络连接不稳定<br>' +
+                    '• 服务器响应超时<br>' +
+                    '• 数据格式错误' +
+                    '</div>' +
+                    '</div>',
+                    {
+                        icon: 0,
+                        title: false,
+                        closeBtn: 1,
+                        btn: ['<i class="fas fa-redo"></i> 重试', '<i class="fas fa-times"></i> 取消'],
+                        yes: function(index) {
+                            layer.close(index);
+                            saveOwner();
+                        }
+                    }
+                );
             }
         });
     }
+
     /**
      * 删除业主
      */
@@ -1372,7 +1731,6 @@
                 closeBtn: 0,
                 btn: ['<i class="fas fa-check"></i> 确定删除', '<i class="fas fa-times"></i> 取消'],
                 btn1: function(index) {
-                    // 显示加载动画
                     var loadingIndex = layer.load(1, {
                         shade: [0.3, '#000'],
                         content: '<div style="color: white;">正在删除...</div>'
@@ -1395,7 +1753,6 @@
                                 });
                                 loadOwnerList(currentPage);
                             } else {
-                                // 🔥 显示详细的错误信息
                                 layer.alert(
                                     '<div style="padding: 15px;">' +
                                     '<div style="font-size: 16px; color: #dc3545; margin-bottom: 10px;">' +
@@ -1450,7 +1807,6 @@
             }
         );
     }
-
 
     /**
      * 批量删除
@@ -1521,7 +1877,6 @@
                                 if (completed === ids.length) {
                                     layer.close(loadingIndex);
 
-                                    // 🔥 显示详细的批量删除结果
                                     var resultHtml = '<div style="padding: 15px;">' +
                                         '<div style="font-size: 16px; margin-bottom: 15px;">' +
                                         '<i class="fas fa-info-circle" style="color: #17a2b8;"></i> 批量删除结果' +
@@ -1578,7 +1933,6 @@
             }
         );
     }
-
 
     /**
      * 导出当前筛选条件的数据
@@ -1658,6 +2012,7 @@
             return '';
         }
     }
+
     /**
      * 🔥 查看业主的所有房屋
      */
@@ -1687,14 +2042,12 @@
                         '<div style="max-height: 400px; overflow-y: auto;">';
 
                     $.each(houses, function(i, house) {
-                        // 🔥 解析房屋编号：0210602 -> 02栋 1单元 06楼 02号
                         var houseId = formatHouseId(house.houseId);
-                        var buildingNo = houseId.substring(0, 2);  // 楼栋：02
-                        var unitNo = houseId.substring(2, 3);      // 单元：1
-                        var floor = houseId.substring(3, 5);       // 楼层：06
-                        var roomNo = houseId.substring(5, 7);      // 房号：02
+                        var buildingNo = houseId.substring(0, 2);
+                        var unitNo = houseId.substring(2, 3);
+                        var floor = houseId.substring(3, 5);
+                        var roomNo = houseId.substring(5, 7);
 
-                        // 🔥 格式化显示：2栋 1单元 6楼 602室
                         var displayName = parseInt(buildingNo) + '栋 ' +
                             parseInt(unitNo) + '单元 ' +
                             parseInt(floor) + '楼 ' +
@@ -1737,7 +2090,7 @@
             }
         });
     }
-
 </script>
 </body>
 </html>
+
